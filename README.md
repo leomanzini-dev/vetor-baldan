@@ -1,5 +1,7 @@
 # VETOR — Governança Estratégica de Portfólio de Inovação (Baldan)
 
+🔗 **Demo publicada:** https://leomanzini-dev.github.io/vetor-baldan/
+
 Protótipo de front-end para o desafio tecnológico da Baldan. Centraliza priorização,
 maturidade tecnológica (TRL) e execução ponta a ponta dos ~180 projetos de inovação da
 companhia, com critérios totalmente parametrizáveis e apoio de IA. Todos os dados são
@@ -23,6 +25,21 @@ npm run dev            # sobe os dois servidores juntos
 - API mock: http://localhost:4000/api
 
 Ou individualmente: `npm run dev --prefix backend` / `npm run dev --prefix frontend`.
+
+## Deploy (GitHub Pages)
+
+A demo publicada é um build 100% estático: `backend/scripts/snapshot.mjs` sobe a API
+mockada localmente, grava a resposta de cada endpoint como JSON em
+`frontend/public/data/`, e o front passa a ler esses arquivos (`frontend/src/lib/api.ts`)
+em vez de chamar um servidor Node ao vivo — assim dá pra publicar em qualquer host
+estático, sem backend hospedado.
+
+```bash
+cd backend && node scripts/snapshot.mjs   # regenera o snapshot em frontend/public/data
+cd ../frontend && npm run build            # build de produção (usa o snapshot atual)
+```
+
+O resultado (`frontend/dist`) foi publicado na branch `gh-pages`, servida pelo GitHub Pages.
 
 ## Estrutura
 
