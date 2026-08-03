@@ -1,0 +1,13 @@
+{
+  "name": "vetor-baldan",
+  "version": "1.0.0",
+  "private": true,
+  "description": "VETOR — protótipo de governança estratégica de portfólio de inovação para a Baldan. Frontend React + backend Node/Express com dados 100% mockados.",
+  "scripts": {
+    "dev": "concurrently -n backend,frontend -c blue,magenta \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
+    "install:all": "npm install --prefix backend && npm install --prefix frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

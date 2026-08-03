@@ -1,0 +1,32 @@
+import type { Vertical } from "../types/domain.js";
+
+export const verticals: Vertical[] = [
+  {
+    id: "preparo-solo",
+    name: "Preparo de Solo",
+    shortName: "Preparo",
+    description: "Grades, arados, subsoladores e sistemas de descompactação e correção de solo.",
+    color: "#8B5E34",
+  },
+  {
+    id: "plantio",
+    name: "Plantio",
+    shortName: "Plantio",
+    description: "Semeadoras, plantadeiras de precisão e sistemas de dosagem e distribuição.",
+    color: "#2E7D32",
+  },
+  {
+    id: "pulverizacao",
+    name: "Pulverização",
+    shortName: "Pulverização",
+    description: "Pulverizadores de barra e autopropelidos, controle de aplicação e taxa variável.",
+    color: "#3B6FB0",
+  },
+  {
+    id: "pecas",
+    name: "Peças",
+    shortName: "Peças",
+    description: "Reposição, componentes de desgaste e linhas de pós-venda para todo o portfólio.",
+    color: "#828282",
+  },
+];

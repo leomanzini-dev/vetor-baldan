@@ -1,0 +1,206 @@
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════════════════════════
+   VETOR — Design tokens (Baldan)
+   Deriva de design-system.md. Tema claro (bege/branco + navegação
+   escura) é o principal; tema escuro deriva do preto/cinza da marca.
+   ═══════════════════════════════════════════════════════════════ */
+
+:root,
+[data-theme="light"] {
+  /* superfícies */
+  --bg: #f5ede3;
+  --bg-alt: #ece3d6;
+  --surface: #ffffff;
+  --surface-soft: #faf9f5;
+
+  /* navegação — sempre escura, é a assinatura estrutural da marca */
+  --nav-bg: #141413;
+  --nav-bg-soft: #201f1d;
+  --nav-border: rgba(255, 255, 255, 0.08);
+  --nav-text: #ffffff;
+  --nav-text-muted: rgba(255, 255, 255, 0.6);
+
+  /* bordas e texto */
+  --border: rgba(20, 20, 19, 0.12);
+  --border-strong: rgba(20, 20, 19, 0.2);
+  --text: #141413;
+  --text-secondary: #4a4a4a;
+  --text-tertiary: #828282;
+  --text-on-primary: #ffffff;
+
+  /* marca */
+  --primary: #cb0a26;
+  --primary-hover: #a80820;
+  --primary-soft: #fbe7ea;
+
+  /* semânticas */
+  --success: #2e7d32;
+  --success-soft: rgba(46, 125, 50, 0.12);
+  --warning: #b3790a;
+  --warning-soft: rgba(230, 167, 0, 0.16);
+  --info: #3b6fb0;
+  --info-soft: rgba(59, 111, 176, 0.12);
+  --danger: #cb0a26;
+  --danger-soft: #fbe7ea;
+  --purple: #6b4e9e;
+  --purple-soft: rgba(107, 78, 158, 0.12);
+
+  /* sombras */
+  --shadow-sm: 0 1px 2px rgba(20, 20, 19, 0.06), 0 1px 3px rgba(20, 20, 19, 0.04);
+  --shadow-md: 0 4px 14px rgba(20, 20, 19, 0.08);
+  --shadow-lg: 0 16px 40px rgba(20, 20, 19, 0.14);
+
+  --scrollbar-track: var(--bg-alt);
+  --scrollbar-thumb: #c9bda8;
+
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --bg: #141413;
+  --bg-alt: #1a1917;
+  --surface: #201f1d;
+  --surface-soft: #1a1917;
+
+  --nav-bg: #0c0c0b;
+  --nav-bg-soft: #171615;
+  --nav-border: rgba(255, 255, 255, 0.08);
+  --nav-text: #ffffff;
+  --nav-text-muted: rgba(255, 255, 255, 0.55);
+
+  --border: rgba(255, 255, 255, 0.09);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --text: #f5ede3;
+  --text-secondary: #c9c2b4;
+  --text-tertiary: #8c8578;
+  --text-on-primary: #ffffff;
+
+  --primary: #e23a52;
+  --primary-hover: #f2536a;
+  --primary-soft: rgba(226, 58, 82, 0.16);
+
+  --success: #4caf50;
+  --success-soft: rgba(76, 175, 80, 0.16);
+  --warning: #e6a700;
+  --warning-soft: rgba(230, 167, 0, 0.16);
+  --info: #5b8fd1;
+  --info-soft: rgba(91, 143, 209, 0.16);
+  --danger: #e23a52;
+  --danger-soft: rgba(226, 58, 82, 0.16);
+  --purple: #9c85c9;
+  --purple-soft: rgba(156, 133, 201, 0.16);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 6px 18px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 20px 48px rgba(0, 0, 0, 0.55);
+
+  --scrollbar-track: #1a1917;
+  --scrollbar-thumb: #37342f;
+
+  color-scheme: dark;
+}
+
+@theme {
+  --font-sans: "Effra", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Freight Macro Pro", "Fraunces", ui-serif, Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", monospace;
+
+  --color-app: var(--bg);
+  --color-app-alt: var(--bg-alt);
+  --color-surface: var(--surface);
+  --color-surface-soft: var(--surface-soft);
+
+  --color-nav: var(--nav-bg);
+  --color-nav-soft: var(--nav-bg-soft);
+  --color-nav-border: var(--nav-border);
+  --color-nav-text: var(--nav-text);
+  --color-nav-text-muted: var(--nav-text-muted);
+
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-text: var(--text);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-on-primary: var(--text-on-primary);
+
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-soft: var(--primary-soft);
+
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-purple: var(--purple);
+  --color-purple-soft: var(--purple-soft);
+
+  --radius-btn: 4px;
+  --radius-card: 8px;
+  --radius-pill: 999px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--bg);
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+::selection {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 5px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+.font-display {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 500;
+}
+
+.shadow-token-sm {
+  box-shadow: var(--shadow-sm);
+}
+.shadow-token-md {
+  box-shadow: var(--shadow-md);
+}
+.shadow-token-lg {
+  box-shadow: var(--shadow-lg);
+}
+
+.bg-blueprint {
+  background-image: linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 28px 28px;
+  -webkit-mask-image: radial-gradient(ellipse at 28% 38%, black 35%, transparent 78%);
+  mask-image: radial-gradient(ellipse at 28% 38%, black 35%, transparent 78%);
+}

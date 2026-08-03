@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.env
+.env.local
+*.log
+.DS_Store
+.vite/
+
+# Material de referência do desafio (briefing, protótipos de layout usados
+# como inspiração de estrutura) — não faz parte do deliverable publicado.
+projeto.md
+design-system.md
+Desafio Tecnológico Baldan.docx
+dashboard-4.html
+login-4.html
+logo baldan.png
+logo baldan.webp
