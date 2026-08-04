@@ -3,6 +3,7 @@ import { Routes, Route } from "react-router-dom";
 import { useThemeStore } from "@/store/themeStore";
 import { AppShell } from "@/components/layout/AppShell";
 import { LoginPage } from "@/pages/LoginPage";
+import { ColaboradorPage } from "@/pages/ColaboradorPage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { PriorizacaoPage } from "@/pages/PriorizacaoPage";
 import { MaturidadePage } from "@/pages/MaturidadePage";
@@ -24,6 +25,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/colaborador" element={<ColaboradorPage />} />
       <Route element={<AppShell />}>
         <Route path="/" element={<DashboardPage />} />
         <Route path="/priorizacao" element={<PriorizacaoPage />} />

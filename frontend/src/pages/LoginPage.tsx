@@ -35,9 +35,9 @@ export function LoginPage() {
   const { data: people } = usePeople();
   const setActivePerson = usePersonaStore((s) => s.setActivePerson);
 
-  function enterAs(personId: string) {
+  function enterAs(personId: string, profile: PersonProfile) {
     setActivePerson(personId);
-    navigate("/");
+    navigate(profile === "executor" ? "/colaborador" : "/");
   }
 
   function handleSubmit(e: FormEvent) {
@@ -188,7 +188,7 @@ export function LoginPage() {
               return (
                 <button
                   key={profile}
-                  onClick={() => enterAs(person.id)}
+                  onClick={() => enterAs(person.id, profile)}
                   className="rounded-full border border-border bg-app-alt px-3.5 py-1.5 text-[12px] font-semibold text-text-secondary transition-colors hover:border-primary hover:bg-primary-soft hover:text-primary"
                 >
                   {profileLabels[profile]}
@@ -196,6 +196,9 @@ export function LoginPage() {
               );
             })}
           </div>
+          <p className="mt-3 text-[11px] text-text-tertiary">
+            Executor abre a versão mobile de campo, com as micro-etapas do dia.
+          </p>
         </motion.div>
       </section>
     </div>

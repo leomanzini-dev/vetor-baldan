@@ -1,4 +1,5 @@
-import { Crown, ClipboardList, Users2, Calculator, Wrench } from "lucide-react";
+import { Crown, ClipboardList, Users2, Calculator, Wrench, Smartphone, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 import { usePeople } from "@/hooks/usePortfolio";
 import { Panel } from "@/components/ui/Panel";
 import { profileLabels } from "@/config/profiles";
@@ -73,6 +74,16 @@ export function PerfisPage() {
                   </span>
                 )}
               </div>
+              {profile === "executor" && (
+                <Link
+                  to="/colaborador"
+                  className="flex items-center justify-center gap-1.5 rounded-btn border border-primary-soft bg-primary-soft py-2 text-[12px] font-bold text-primary transition-colors hover:bg-primary-soft/70"
+                >
+                  <Smartphone className="h-3.5 w-3.5" />
+                  Ver experiência mobile
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              )}
             </div>
           );
         })}
