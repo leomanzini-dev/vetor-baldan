@@ -1,7 +1,9 @@
 import { useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
 import { useThemeStore } from "@/store/themeStore";
+import { useSentinelaTracker } from "@/hooks/useSentinelaTracker";
 import { AppShell } from "@/components/layout/AppShell";
+import { SentinelaPanel } from "@/components/sentinela/SentinelaPanel";
 import { LoginPage } from "@/pages/LoginPage";
 import { ColaboradorPage } from "@/pages/ColaboradorPage";
 import { DashboardPage } from "@/pages/DashboardPage";
@@ -21,20 +23,24 @@ function useSyncTheme() {
 
 export default function App() {
   useSyncTheme();
+  useSentinelaTracker();
 
   return (
-    <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/colaborador" element={<ColaboradorPage />} />
-      <Route element={<AppShell />}>
-        <Route path="/" element={<DashboardPage />} />
-        <Route path="/priorizacao" element={<PriorizacaoPage />} />
-        <Route path="/maturidade" element={<MaturidadePage />} />
-        <Route path="/execucao" element={<ExecucaoPage />} />
-        <Route path="/projetos" element={<ProjetosPage />} />
-        <Route path="/parametrizacao" element={<ParametrizacaoPage />} />
-        <Route path="/perfis" element={<PerfisPage />} />
-      </Route>
-    </Routes>
+    <>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/colaborador" element={<ColaboradorPage />} />
+        <Route element={<AppShell />}>
+          <Route path="/" element={<DashboardPage />} />
+          <Route path="/priorizacao" element={<PriorizacaoPage />} />
+          <Route path="/maturidade" element={<MaturidadePage />} />
+          <Route path="/execucao" element={<ExecucaoPage />} />
+          <Route path="/projetos" element={<ProjetosPage />} />
+          <Route path="/parametrizacao" element={<ParametrizacaoPage />} />
+          <Route path="/perfis" element={<PerfisPage />} />
+        </Route>
+      </Routes>
+      <SentinelaPanel />
+    </>
   );
 }

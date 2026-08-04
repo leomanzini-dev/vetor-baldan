@@ -1,10 +1,12 @@
-import { Menu, Search, Bell } from "lucide-react";
+import { Menu, Search, Bell, ShieldCheck } from "lucide-react";
 import { useUiStore } from "@/store/uiStore";
+import { useSentinelaStore } from "@/store/sentinelaStore";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { PersonaSwitcher } from "@/components/layout/PersonaSwitcher";
 
 export function Topbar() {
   const setMobileNavOpen = useUiStore((s) => s.setMobileNavOpen);
+  const openSentinela = useSentinelaStore((s) => s.open);
 
   return (
     <header className="sticky top-0 z-20 flex h-16 items-center gap-4 border-b border-border bg-surface/90 px-5 backdrop-blur lg:px-8">
@@ -26,6 +28,15 @@ export function Topbar() {
       </div>
 
       <div className="flex-1" />
+
+      <button
+        aria-label="Sentinela — auditoria de acessos"
+        title="Sentinela — auditoria de acessos"
+        onClick={openSentinela}
+        className="flex h-9 w-9 items-center justify-center rounded-md border border-border text-text-secondary transition-colors hover:border-primary hover:text-primary"
+      >
+        <ShieldCheck className="h-[18px] w-[18px]" />
+      </button>
 
       <button
         aria-label="Notificações"

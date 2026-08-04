@@ -197,6 +197,45 @@ body {
   box-shadow: var(--shadow-lg);
 }
 
+@keyframes sentinela-orbit-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes sentinela-icon-float {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.85;
+  }
+  50% {
+    transform: translateY(-5px);
+    opacity: 1;
+  }
+}
+@keyframes sentinela-ring {
+  0%,
+  100% {
+    transform: scale(0.92);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.04);
+    opacity: 0.15;
+  }
+}
+@keyframes sentinela-node-pulse {
+  0%,
+  100% {
+    transform: scale(0.88);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0;
+  }
+}
+
 .bg-blueprint {
   background-image: linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);

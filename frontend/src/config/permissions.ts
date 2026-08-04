@@ -72,4 +72,9 @@ export const screenAccessMatrix: ScreenAccess[] = [
     path: "/perfis",
     access: { diretoria: "edita", pmo: "visualiza", area: "—", controladoria: "—", executor: "—" },
   },
+  {
+    screen: "App do Colaborador",
+    path: "/colaborador",
+    access: { diretoria: "—", pmo: "—", area: "—", controladoria: "—", executor: "edita" },
+  },
 ];
