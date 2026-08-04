@@ -19,10 +19,10 @@ export function ProjetosPage() {
         </p>
       </div>
 
-      <div className="flex gap-2 border-b border-border">
+      <div className="flex gap-2 overflow-x-auto border-b border-border [scrollbar-width:none]">
         <button
           onClick={() => setTab("catalogo")}
-          className={`flex items-center gap-2 border-b-2 px-3.5 py-2.5 text-[13px] font-semibold transition-colors ${
+          className={`flex shrink-0 items-center gap-2 whitespace-nowrap border-b-2 px-3.5 py-2.5 text-[13px] font-semibold transition-colors ${
             tab === "catalogo" ? "border-primary text-primary" : "border-transparent text-text-tertiary hover:text-text"
           }`}
         >
@@ -31,7 +31,7 @@ export function ProjetosPage() {
         </button>
         <button
           onClick={() => setTab("submissao")}
-          className={`flex items-center gap-2 border-b-2 px-3.5 py-2.5 text-[13px] font-semibold transition-colors ${
+          className={`flex shrink-0 items-center gap-2 whitespace-nowrap border-b-2 px-3.5 py-2.5 text-[13px] font-semibold transition-colors ${
             tab === "submissao" ? "border-primary text-primary" : "border-transparent text-text-tertiary hover:text-text"
           }`}
         >

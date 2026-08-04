@@ -134,7 +134,7 @@ export function SubmissionForm() {
             className="w-full resize-none rounded-md border border-border bg-app-alt px-3 py-2 text-[13px] text-text outline-none focus:border-primary focus:ring-2 focus:ring-primary-soft"
           />
         </Field>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <Field label="TIR estimada (%)">
             <input
               type="number"
@@ -182,7 +182,7 @@ export function SubmissionForm() {
               <p className="text-[12.5px] leading-relaxed text-text-secondary">{analysis.narrative}</p>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <Field label="Vertical sugerida">
                 <select
                   value={analysis.vertical}

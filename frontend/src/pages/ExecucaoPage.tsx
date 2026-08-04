@@ -53,7 +53,7 @@ export function ExecucaoPage() {
         </p>
       </div>
 
-      <div className="flex gap-2 border-b border-border">
+      <div className="flex gap-2 overflow-x-auto border-b border-border [scrollbar-width:none]">
         {tabs.map((t) => {
           const Icon = t.icon;
           const active = tab === t.id;
@@ -61,7 +61,7 @@ export function ExecucaoPage() {
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`flex items-center gap-2 border-b-2 px-3.5 py-2.5 text-[13px] font-semibold transition-colors ${
+              className={`flex shrink-0 items-center gap-2 whitespace-nowrap border-b-2 px-3.5 py-2.5 text-[13px] font-semibold transition-colors ${
                 active ? "border-primary text-primary" : "border-transparent text-text-tertiary hover:text-text"
               }`}
             >
