@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { Bell, LayoutGrid, Sparkles, User, ArrowLeft, ChevronRight } from "lucide-react";
 import { usePersonaStore } from "@/store/personaStore";
@@ -18,6 +18,21 @@ const filters: { id: FilterId; label: string }[] = [
   { id: "em-andamento", label: "Em andamento" },
   { id: "concluida", label: "Concluída" },
 ];
+
+// Card "frame de celular" — cabeçalho e rodapé ficam FORA da área com scroll
+// (flex-1 + overflow-y-auto), então nunca se movem com o conteúdo. Usar
+// position:absolute/fixed para o rodapé dentro de um container com overflow
+// gruda no fim do CONTEÚDO TOTAL, não no fim da área visível — por isso
+// evitamos essa abordagem aqui.
+function PhoneFrame({ children }: { children: ReactNode }) {
+  return (
+    <div className="min-h-screen bg-app-alt sm:flex sm:items-center sm:justify-center sm:p-8">
+      <div className="relative mx-auto flex h-dvh w-full flex-col bg-app sm:h-[820px] sm:max-w-[440px] sm:overflow-hidden sm:rounded-[32px] sm:border sm:border-border sm:shadow-token-lg">
+        {children}
+      </div>
+    </div>
+  );
+}
 
 function startOfToday(): number {
   const d = new Date();
@@ -91,77 +106,73 @@ export function ColaboradorPage() {
 
   if (isNotExecutor) {
     return (
-      <div className="min-h-screen bg-app-alt sm:flex sm:items-center sm:justify-center sm:p-8">
-        <div className="relative mx-auto flex min-h-screen w-full flex-col bg-app sm:h-[820px] sm:min-h-0 sm:max-w-[440px] sm:rounded-[32px] sm:border sm:border-border sm:shadow-token-lg">
-          <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
-            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-primary">
-              <User className="h-7 w-7" />
-            </span>
-            <div>
-              <p className="text-[16px] font-bold text-text">Essa visão é para o perfil Executor</p>
-              <p className="mt-1.5 text-[13px] text-text-secondary">
-                {person?.name} está logado como {profileLabels[person!.profile]}. Escolha um colaborador para ver a
-                versão de campo:
-              </p>
-            </div>
-            <div className="flex w-full max-w-xs flex-col gap-1.5">
-              {executors.map((ex) => (
-                <button
-                  key={ex.id}
-                  onClick={() => setActivePerson(ex.id)}
-                  className="flex items-center gap-3 rounded-xl border border-border bg-surface px-3 py-2.5 text-left transition-colors hover:border-primary/40"
-                >
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-app-alt text-[11px] font-bold text-text-secondary">
-                    {ex.avatarInitials}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[12.5px] font-semibold text-text">{ex.name}</span>
-                    <span className="block truncate text-[10.5px] text-text-tertiary">{ex.role}</span>
-                  </span>
-                </button>
-              ))}
-            </div>
-            <button
-              onClick={() => navigate("/")}
-              className="mt-2 flex items-center gap-2 text-[12.5px] font-semibold text-text-tertiary hover:text-text"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              Voltar para o painel executivo
-            </button>
+      <PhoneFrame>
+        <div className="flex flex-1 flex-col items-center justify-center gap-4 overflow-y-auto px-6 py-10 text-center">
+          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-primary">
+            <User className="h-7 w-7" />
+          </span>
+          <div>
+            <p className="text-[16px] font-bold text-text">Essa visão é para o perfil Executor</p>
+            <p className="mt-1.5 text-[13px] text-text-secondary">
+              {person?.name} está logado como {profileLabels[person!.profile]}. Escolha um colaborador para ver a
+              versão de campo:
+            </p>
           </div>
+          <div className="flex w-full max-w-xs flex-col gap-1.5">
+            {executors.map((ex) => (
+              <button
+                key={ex.id}
+                onClick={() => setActivePerson(ex.id)}
+                className="flex items-center gap-3 rounded-xl border border-border bg-surface px-3 py-2.5 text-left transition-colors hover:border-primary/40"
+              >
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-app-alt text-[11px] font-bold text-text-secondary">
+                  {ex.avatarInitials}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[12.5px] font-semibold text-text">{ex.name}</span>
+                  <span className="block truncate text-[10.5px] text-text-tertiary">{ex.role}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={() => navigate("/")}
+            className="mt-2 flex items-center gap-2 text-[12.5px] font-semibold text-text-tertiary hover:text-text"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Voltar para o painel executivo
+          </button>
         </div>
-      </div>
+      </PhoneFrame>
     );
   }
 
   return (
-    <div className="min-h-screen bg-app-alt sm:flex sm:items-center sm:justify-center sm:p-8">
-      <div className="relative mx-auto flex min-h-screen w-full flex-col bg-app pb-24 sm:h-[820px] sm:min-h-0 sm:max-w-[440px] sm:overflow-y-auto sm:rounded-[32px] sm:border sm:border-border sm:shadow-token-lg">
-        {/* Header */}
-        <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-border bg-surface px-[18px] py-4">
-          <button
-            onClick={() => setTab("perfil")}
-            className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
-          >
-            <span className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-[15px] font-bold text-on-primary">
-              {person?.avatarInitials ?? "—"}
-              <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-surface bg-success" />
-            </span>
-            <span className="min-w-0">
-              <span className="block text-[12px] font-semibold text-text-tertiary">{greeting},</span>
-              <span className="block truncate text-[17px] font-bold leading-tight text-text">{firstName || "Colaborador"} 👷</span>
-            </span>
-          </button>
-          <ThemeToggle />
-          <button
-            aria-label="Notificações"
-            className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border bg-app-alt text-text"
-          >
-            <Bell className="h-5 w-5" />
-            <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full border-2 border-surface bg-danger" />
-          </button>
-        </header>
+    <PhoneFrame>
+      {/* Header — fora da área com scroll, nunca se move */}
+      <header className="flex shrink-0 items-center gap-3 border-b border-border bg-surface px-[18px] py-4">
+        <button onClick={() => setTab("perfil")} className="flex min-w-0 flex-1 items-center gap-2.5 text-left">
+          <span className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-[15px] font-bold text-on-primary">
+            {person?.avatarInitials ?? "—"}
+            <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-surface bg-success" />
+          </span>
+          <span className="min-w-0">
+            <span className="block text-[12px] font-semibold text-text-tertiary">{greeting},</span>
+            <span className="block truncate text-[17px] font-bold leading-tight text-text">{firstName || "Colaborador"} 👷</span>
+          </span>
+        </button>
+        <ThemeToggle />
+        <button
+          aria-label="Notificações"
+          className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border bg-app-alt text-text"
+        >
+          <Bell className="h-5 w-5" />
+          <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full border-2 border-surface bg-danger" />
+        </button>
+      </header>
 
+      {/* Conteúdo — único elemento que rola */}
+      <div className="flex-1 overflow-y-auto">
         {tab === "tarefas" && (
           <>
             {/* Today banner */}
@@ -324,33 +335,33 @@ export function ColaboradorPage() {
             </button>
           </section>
         )}
-
-        {/* Bottom nav */}
-        <nav className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-3 border-t border-border bg-surface px-2 py-2 sm:absolute">
-          {(
-            [
-              { id: "tarefas" as TabId, label: "Tarefas", icon: LayoutGrid },
-              { id: "pontos" as TabId, label: "Pontos", icon: Sparkles },
-              { id: "perfil" as TabId, label: "Perfil", icon: User },
-            ]
-          ).map((item) => {
-            const Icon = item.icon;
-            const active = tab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setTab(item.id)}
-                className={`flex flex-col items-center gap-1 rounded-xl py-2 text-[10.5px] font-bold transition-colors ${
-                  active ? "text-primary" : "text-text-tertiary"
-                }`}
-              >
-                <Icon className="h-[22px] w-[22px]" />
-                {item.label}
-              </button>
-            );
-          })}
-        </nav>
       </div>
-    </div>
+
+      {/* Bottom nav — fora da área com scroll, nunca se move */}
+      <nav className="grid shrink-0 grid-cols-3 border-t border-border bg-surface px-2 py-2">
+        {(
+          [
+            { id: "tarefas" as TabId, label: "Tarefas", icon: LayoutGrid },
+            { id: "pontos" as TabId, label: "Pontos", icon: Sparkles },
+            { id: "perfil" as TabId, label: "Perfil", icon: User },
+          ]
+        ).map((item) => {
+          const Icon = item.icon;
+          const active = tab === item.id;
+          return (
+            <button
+              key={item.id}
+              onClick={() => setTab(item.id)}
+              className={`flex flex-col items-center gap-1 rounded-xl py-2 text-[10.5px] font-bold transition-colors ${
+                active ? "text-primary" : "text-text-tertiary"
+              }`}
+            >
+              <Icon className="h-[22px] w-[22px]" />
+              {item.label}
+            </button>
+          );
+        })}
+      </nav>
+    </PhoneFrame>
   );
 }
