@@ -1,7 +1,11 @@
 import { lensDefs } from "@/config/lenses";
+import { useWeightsStore } from "@/store/weightsStore";
 import type { ScoredProject } from "@/lib/priority";
 
-const lensLabel = (id: string) => lensDefs.find((l) => l.id === id)?.label ?? id;
+const lensLabel = (id: string) =>
+  lensDefs.find((l) => l.id === id)?.label ??
+  useWeightsStore.getState().customLenses.find((l) => l.id === id)?.label ??
+  id;
 
 export function buildRankExplanation(scored: ScoredProject, rank: number, totalCount: number): string {
   const { project, contributions } = scored;

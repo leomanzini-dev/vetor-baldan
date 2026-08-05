@@ -3,6 +3,7 @@ import { Sparkles, CheckCircle2, RotateCcw } from "lucide-react";
 import { useProjects, useVerticals, useProjectTypes } from "@/hooks/usePortfolio";
 import { useWeightsStore } from "@/store/weightsStore";
 import { lensDefs } from "@/config/lenses";
+import { useAllLenses } from "@/hooks/useLenses";
 import { verticalNames } from "@/config/verticals";
 import { rankProjects, weightedTotal } from "@/lib/priority";
 import { inferVertical, inferType, inferTrl, inferScores, buildIntakeNarrative } from "@/lib/aiIntake";
@@ -29,6 +30,7 @@ export function SubmissionForm() {
   const { data: verticals } = useVerticals();
   const { data: types } = useProjectTypes();
   const weights = useWeightsStore((s) => s.weights);
+  const allLenses = useAllLenses();
 
   function runAnalysis() {
     if (!projectsData) return;
@@ -62,7 +64,7 @@ export function SubmissionForm() {
       tags: [],
     };
 
-    const ranked = rankProjects([...projectsData.items, draft], weights);
+    const ranked = rankProjects([...projectsData.items, draft], weights, allLenses);
     const rank = ranked.findIndex((r) => r.project.id === "draft") + 1;
 
     setAnalysis({
@@ -82,7 +84,7 @@ export function SubmissionForm() {
     setAnalysis({ ...analysis, scores: { ...analysis.scores, [lens]: value } });
   }
 
-  const liveScore = analysis ? weightedTotal(analysis.scores, weights) : 0;
+  const liveScore = analysis ? weightedTotal(analysis.scores, weights, allLenses) : 0;
 
   function reset() {
     setForm(emptyForm);
@@ -233,14 +235,14 @@ export function SubmissionForm() {
                         <lens.icon className="h-3.5 w-3.5" />
                         {lens.short}
                       </span>
-                      <span className="font-mono font-semibold text-text">{analysis.scores[lens.id]}</span>
+                      <span className="font-mono font-semibold text-text">{analysis.scores[lens.id as keyof ProjectScores]}</span>
                     </div>
                     <input
                       type="range"
                       min={0}
                       max={100}
-                      value={analysis.scores[lens.id]}
-                      onChange={(e) => updateScore(lens.id, Number(e.target.value))}
+                      value={analysis.scores[lens.id as keyof ProjectScores]}
+                      onChange={(e) => updateScore(lens.id as keyof ProjectScores, Number(e.target.value))}
                       className="w-full cursor-pointer"
                       style={{ accentColor: "var(--primary)" }}
                     />

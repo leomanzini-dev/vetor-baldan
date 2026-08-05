@@ -57,3 +57,39 @@ export const trlBandColors = {
   light: [trlRampLight[0], trlRampLight[4], trlRampLight[8]],
   dark: [trlRampDark[0], trlRampDark[4], trlRampDark[8]],
 };
+
+// Paleta categórica de 8 tons (azul/laranja/água/amarelo/magenta/verde/violeta/
+// vermelho) — a mesma ordem fixa validada pela skill de dataviz (pior par
+// adjacente: ΔE CVD 9.1 claro / 8.4 escuro; nunca ciclada). Usada para
+// identidade de lente no Eixo 1 (uma cor por lente, sempre acompanhada de
+// legenda com nome — a cor nunca carrega o significado sozinha). A partir da
+// 9ª lente (personalizadas em excesso), o resto é agrupado em "Outras" com o
+// tom neutro abaixo, nunca gerando uma 9ª cor de série.
+export const lensCategoricalRamp: { light: string; dark: string }[] = [
+  { light: "#2a78d6", dark: "#3987e5" }, // 1 azul
+  { light: "#eb6834", dark: "#d95926" }, // 2 laranja
+  { light: "#1baf7a", dark: "#199e70" }, // 3 água
+  { light: "#eda100", dark: "#c98500" }, // 4 amarelo
+  { light: "#e87ba4", dark: "#d55181" }, // 5 magenta
+  { light: "#008300", dark: "#008300" }, // 6 verde
+  { light: "#4a3aa7", dark: "#9085e9" }, // 7 violeta
+  { light: "#e34948", dark: "#e66767" }, // 8 vermelho
+];
+
+export const lensOtherColor = { light: "#A9A392", dark: "#6B675A" };
+
+export function lensSlotColor(index: number, mode: "light" | "dark"): string {
+  if (index >= lensCategoricalRamp.length) return pickThemed(mode, lensOtherColor);
+  return pickThemed(mode, lensCategoricalRamp[index]);
+}
+
+// Cores de faixa de prioridade no ranking — paleta de STATUS (ordinal), não
+// categórica: espelha os tokens já usados na UI (primary/success/warning/
+// neutro) para que "Prioritário" no gráfico bata com o mesmo vermelho usado
+// nos badges "maior peso" e "Prioritário" do resto do produto.
+export const priorityBandColors = {
+  prioritario: { light: "#cb0a26", dark: "#e23a52" },
+  alto: { light: "#2e7d32", dark: "#4caf50" },
+  medio: { light: "#b3790a", dark: "#e6a700" },
+  baixo: { light: "#828282", dark: "#8c8578" },
+};

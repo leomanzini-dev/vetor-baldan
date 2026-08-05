@@ -1,6 +1,6 @@
 import { Sparkles } from "lucide-react";
 import { VerticalBadge, HealthBadge } from "@/components/ui/Badge";
-import { lensDefs } from "@/config/lenses";
+import { useAllLenses } from "@/hooks/useLenses";
 import { buildRankExplanation } from "@/lib/explainability";
 import type { ScoredProject } from "@/lib/priority";
 
@@ -14,6 +14,7 @@ export function ExplainabilityPanel({ scored, rank, totalCount }: Props) {
   const { project, contributions, total } = scored;
   const maxContribution = Math.max(...contributions.map((c) => c.contribution), 1);
   const explanation = buildRankExplanation(scored, rank, totalCount);
+  const allLenses = useAllLenses();
 
   return (
     <div className="flex flex-col gap-5">
@@ -45,7 +46,7 @@ export function ExplainabilityPanel({ scored, rank, totalCount }: Props) {
         </p>
         <div className="flex flex-col gap-2.5">
           {contributions.map((c, i) => {
-            const lens = lensDefs.find((l) => l.id === c.lens)!;
+            const lens = allLenses.find((l) => l.id === c.lens)!;
             const widthPct = (c.contribution / maxContribution) * 100;
             const isTop = i === 0;
             return (

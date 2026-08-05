@@ -85,6 +85,12 @@ export function inferScores(name: string, description: string, tirPercent: numbe
   const regulatorio = Math.round(55 + rand() * 30);
   const esg = Math.round(50 + scoreKeywords(text, ["sustentáv", "esg", "ambient", "energia", "emissão"]) * 12 + rand() * 20);
   const operacional = Math.round(50 + rand() * 30);
+  const complexidadeIndustrial = Math.round(
+    70 -
+      scoreKeywords(text, ["processo produtivo", "ferramental", "máquina", "linha de produção", "treinamento", "industrializ"]) *
+        10 +
+      rand() * 25
+  );
 
   const clamp = (v: number) => Math.max(10, Math.min(98, v));
 
@@ -96,6 +102,7 @@ export function inferScores(name: string, description: string, tirPercent: numbe
     regulatorio: clamp(regulatorio),
     esg: clamp(esg),
     operacional: clamp(operacional),
+    complexidadeIndustrial: clamp(complexidadeIndustrial),
   };
 }
 

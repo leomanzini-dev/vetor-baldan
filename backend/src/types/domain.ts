@@ -39,12 +39,13 @@ export type ProjectHealth = "on-track" | "attention" | "critical";
 
 export interface ProjectScores {
   financeiro: number; // 0-100
-  mercado: number;
+  mercado: number; // exibido como "Inovação & Diferenciação" no Eixo 1
   riscoTecnologico: number; // maior = menor risco (escala normalizada)
   aderenciaEstrategica: number;
   regulatorio: number;
   esg: number;
-  operacional: number;
+  operacional: number; // exibido como "Viabilidade Operacional" no Eixo 1
+  complexidadeIndustrial: number; // impacto em processo produtivo, ferramental e treinamento
 }
 
 export interface Project {

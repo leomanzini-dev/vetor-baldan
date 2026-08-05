@@ -221,19 +221,21 @@ function buildScores(riskBias: number): ProjectScores {
     regulatorio: randInt(50, 99),
     esg: randInt(40, 95),
     operacional: randInt(35, 95),
+    complexidadeIndustrial: randInt(30, 95),
   };
 }
 
 function weightedAverage(scores: ProjectScores): number {
   // pesos default de referência (o Eixo 1 permite reponderar livremente)
   const weights = {
-    financeiro: 0.25,
+    financeiro: 0.2,
     mercado: 0.15,
     riscoTecnologico: 0.15,
     aderenciaEstrategica: 0.2,
     regulatorio: 0.05,
     esg: 0.1,
     operacional: 0.1,
+    complexidadeIndustrial: 0.05,
   };
   const total = (Object.keys(weights) as (keyof ProjectScores)[]).reduce(
     (sum, key) => sum + scores[key] * weights[key],

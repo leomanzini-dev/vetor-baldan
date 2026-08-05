@@ -1,8 +1,8 @@
 import type { ComponentType } from "react";
-import { Coins, LineChart, ShieldAlert, Compass, Scale, Leaf, Cog } from "lucide-react";
+import { Coins, Lightbulb, ShieldAlert, Compass, Scale, Leaf, Factory, Cog } from "lucide-react";
 import type { ProjectScores } from "@/types/domain";
 
-export type LensId = keyof ProjectScores;
+export type LensId = keyof ProjectScores | string;
 
 export interface LensDef {
   id: LensId;
@@ -12,6 +12,11 @@ export interface LensDef {
   icon: ComponentType<{ className?: string }>;
 }
 
+// As 8 lentes fixas do modelo — cada uma corresponde a um campo real calculado
+// no gerador de dados (backend/src/data/generateProjects.ts → buildScores).
+// Lentes criadas pelo usuário em tempo de execução (ver weightsStore.customLenses)
+// não entram nesta lista: elas não têm nota real no dataset, então recebem uma
+// nota derivada de forma determinística — ver lib/priority.ts.
 export const lensDefs: LensDef[] = [
   {
     id: "financeiro",
@@ -22,10 +27,11 @@ export const lensDefs: LensDef[] = [
   },
   {
     id: "mercado",
-    label: "Potencial de Mercado",
-    short: "Mercado",
-    description: "Demanda estimada e diferenciação competitiva.",
-    icon: LineChart,
+    label: "Inovação & Diferenciação",
+    short: "Inovação",
+    description:
+      "Grau de inovação frente aos concorrentes e possibilidade de gerar vantagem competitiva sustentável.",
+    icon: Lightbulb,
   },
   {
     id: "riscoTecnologico",
@@ -57,9 +63,17 @@ export const lensDefs: LensDef[] = [
   },
   {
     id: "operacional",
-    label: "Operacional",
-    short: "Operacional",
-    description: "Complexidade de implantação e escalabilidade produtiva.",
+    label: "Viabilidade Operacional",
+    short: "Viabilidade",
+    description:
+      "Facilidade de industrialização, disponibilidade de componentes, capacidade fabril e impacto na produção.",
+    icon: Factory,
+  },
+  {
+    id: "complexidadeIndustrial",
+    label: "Complexidade Industrial",
+    short: "Complexidade",
+    description: "Impacto em processos produtivos, investimentos em máquinas, ferramental e treinamento.",
     icon: Cog,
   },
 ];
@@ -67,13 +81,14 @@ export const lensDefs: LensDef[] = [
 // Espelha os pesos default usados no backend (generateProjects.ts → weightedAverage)
 // para que "Padrão Baldan" reproduza exatamente o priorityScoreDefault de cada projeto.
 export const defaultWeights: Record<LensId, number> = {
-  financeiro: 25,
+  financeiro: 20,
   mercado: 15,
   riscoTecnologico: 15,
   aderenciaEstrategica: 20,
   regulatorio: 5,
   esg: 10,
   operacional: 10,
+  complexidadeIndustrial: 5,
 };
 
 export interface WeightPreset {
@@ -87,7 +102,7 @@ export const weightPresets: WeightPreset[] = [
   {
     id: "padrao",
     label: "Padrão Baldan",
-    description: "Configuração de referência, equilibrada entre os sete critérios.",
+    description: "Configuração de referência, equilibrada entre os oito critérios.",
     weights: defaultWeights,
   },
   {
@@ -95,13 +110,14 @@ export const weightPresets: WeightPreset[] = [
     label: "Foco Financeiro",
     description: "Prioriza retorno — TIR e VPL pesam mais que os demais critérios.",
     weights: {
-      financeiro: 40,
-      mercado: 20,
+      financeiro: 35,
+      mercado: 15,
       riscoTecnologico: 10,
       aderenciaEstrategica: 15,
       regulatorio: 5,
       esg: 5,
       operacional: 5,
+      complexidadeIndustrial: 10,
     },
   },
   {
@@ -110,12 +126,13 @@ export const weightPresets: WeightPreset[] = [
     description: "Prioriza projetos mais alinhados à direção de longo prazo da Baldan.",
     weights: {
       financeiro: 15,
-      mercado: 15,
+      mercado: 10,
       riscoTecnologico: 10,
       aderenciaEstrategica: 35,
       regulatorio: 5,
       esg: 10,
       operacional: 10,
+      complexidadeIndustrial: 5,
     },
   },
   {
@@ -128,8 +145,9 @@ export const weightPresets: WeightPreset[] = [
       riscoTecnologico: 10,
       aderenciaEstrategica: 15,
       regulatorio: 20,
-      esg: 25,
+      esg: 20,
       operacional: 5,
+      complexidadeIndustrial: 5,
     },
   },
 ];
