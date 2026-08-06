@@ -1,0 +1,14 @@
+{
+  "name": "vetor-baldan",
+  "version": "1.0.0",
+  "private": true,
+  "description": "VETOR — protótipo de governança estratégica de portfólio de inovação para a Baldan.",
+  "workspaces": ["backend", "frontend", "zapper"],
+  "scripts": {
+    "dev": "concurrently -n backend,frontend,zapper -c blue,magenta,green \"npm run dev -w backend\" \"npm run dev -w frontend\" \"node zapper/start.js\"",
+    "zapper": "node zapper/start.js"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

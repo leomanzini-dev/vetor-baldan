@@ -1,0 +1,411 @@
+==============================
+     MAPA DO VETOR BALDAN
+==============================
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  ATENCAO — COMPORTAMENTO DO WHATSAPP (ZAPPER)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  O bot do WhatsApp simula comportamento HUMANO para nao
+  parecer bot. Isso e INTENCIONAL e NAO deve ser removido.
+
+  1. DIGITANDO: ao receber /baldan, o bot ativa o status
+     "composing" (digitando...) ANTES de chamar a IA.
+     O usuario ve "digitando..." enquanto a resposta e
+     gerada. Arquivo: zapper/script/message-handler.js
+
+  2. DELAY DE 2 SEGUNDOS: depois que a IA gera a resposta,
+     o bot espera mais 2s AINDA DIGITANDO antes de enviar.
+     Isso garante que o tempo total pareca natural (uma
+     pessoa lendo, pensando e digitando). Sem esse delay,
+     respostas rapidas da IA chegariam instantaneamente
+     apos o "digitando..." aparecer, o que entrega que e
+     um bot.
+
+  3. PAUSED: depois de enviar, o bot desativa o status
+     (sendPresenceUpdate "paused"). O "digitando..." some.
+
+  Fluxo completo:
+    usuario manda /baldan <pergunta>
+    → bot ativa "composing" (digitando...)
+    → bot chama POST /api/ai/chat (IA pensa, 3-15s)
+    → bot espera +2s (ainda digitando)
+    → bot envia a resposta
+    → bot desativa "composing" (paused)
+
+  NAO REMOVER o delay nem o composing. Se a resposta da IA
+  ficar mais lenta no futuro, o delay de 2s pode ser
+  reduzido, mas nunca zerado.
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+Raiz
+  package.json           scripts de dev (concurrently front + back)
+  .gitignore             ignora node_modules, dist e .env
+  README.md              documentacao do projeto
+  map.txt                este arquivo
+
+backend/                 API Express em TypeScript (porta 4000)
+  package.json           Express + CORS, tsx watch para dev
+  tsconfig.json          config TypeScript do backend
+  src/server.ts          entry point, bind em 0.0.0.0:4000, monta rotas e /api/health
+  src/types/domain.ts    interfaces do dominio: Project, Person, Phase, Stage, MicroStage, SCurvePoint, StatusReport
+  src/controllers/
+    portfolioController.ts  handlers: verticals, project-types, funnel, parameters, people, summary, highlights, projects
+    executionController.ts  handlers: execution/projects, execution/capacity, execution/:projectId
+  src/services/
+    portfolioService.ts    gera 180 projetos em memoria (PRNG seed fixo), filtra, pagina, agrega summary e highlights
+    executionService.ts    filtra projetos em execucao/encerrados, detalhe por projeto, capacidade mensal por executor
+  src/routes/
+    portfolioRoutes.ts     registra endpoints de portfolio no router
+    executionRoutes.ts     registra endpoints de execucao no router
+  src/ia/                  modulo de IA com fallback Gemini 3x + Arcee 3x
+    client.ts              cliente compartilhado: Gemini 3x → Arcee 3x → erro, timeout 30s, fail-fast em 4xx
+    router.ts              etapa 1 do RAG: interpreta a pergunta, escolhe sumarios pelo catalogo
+    responder.ts           etapa 2 do RAG: monta prompt com sumarios e gera resposta final
+    routes.ts              Express router: POST /ai/chat, GET /ai/summaries, GET /ai/summaries/:id
+    summaries/
+      catalog.ts           catalogo dos 7 sumarios com id, label, descricao e keywords
+      hub.ts               carrega e combina sumarios selecionados pelo router
+      dashboard.ts         sumario: KPIs, saude, verticais, funil, criticos, top prioridade
+      priorizacao.ts       sumario: ranking, faixas, top 10, media das 8 lentes
+      maturidade.ts        sumario: distribuicao TRL 1-9, faixas, proximos a escalar
+      execucao.ts          sumario: projetos em execucao, SPI/CPI, capacidade, sobrecarga
+      projetos.ts          sumario: catalogo completo dos 180 projetos com todos os campos
+      equipe.ts            sumario: 29 membros agrupados por perfil, carga, vertical
+      seguranca.ts         sumario: descricao do Security Guard (dados mocados)
+  src/data/
+    verticals.ts           4 verticais: preparo-solo, plantio, pulverizacao, pecas (com cores)
+    projectTypes.ts        4 tipos: novo-produto (6 fases), melhoria (4), inovacao (6), parceria-externa (5)
+    funnel.ts              6 estagios: captacao, triagem, avaliacao, gate, execucao, encerrado
+    parameters.ts          parametros de fabrica: 10 pts/hora, 21 dias uteis/mes, moeda BRL
+    people.ts              29 pessoas: 2 diretoria, 3 pmo, 4 area, 2 controladoria, 18 executores
+    generateProjects.ts    gera 180 projetos com PRNG deterministico (seed 20240914), scores por 8 criterios
+    generateExecution.ts   arvore fases/etapas/micro-etapas, curva-S logistica, status report por health
+    flowTemplates.ts       nomes de fases por tipo, pool de etapas (15) e micro-etapas (26)
+  scripts/
+    snapshot.mjs           bate no backend e salva todos os endpoints como JSON estatico em frontend/public/data/
+
+frontend/                React 19 + Vite 8 + TailwindCSS 4 + TypeScript
+  package.json           React 19, Vite 8, Recharts 3, Zustand 5, TanStack Query 5, Framer Motion, Lucide
+  vite.config.ts         base /vetor-baldan/, alias @ para ./src, porta 5173
+  index.html             shell HTML com fonte e meta
+  tsconfig.json          config raiz TypeScript do front
+  tsconfig.app.json      config de compilacao do app
+  tsconfig.node.json     config de compilacao do Vite
+  .oxlintrc.json         config do linter OxLint
+  public/favicon.svg     icone do app
+  public/data/           JSONs estaticos gerados pelo snapshot.mjs
+    projects.json            180 projetos com todos os campos
+    verticals.json           verticais
+    project-types.json       tipos de projeto
+    funnel-stages.json       estagios do funil
+    parameters.json          parametros de capacidade
+    people.json              pessoas e perfis
+    portfolio-summary.json   agregados do portfolio
+    portfolio-highlights.json  criticos + top prioridade
+    execution-projects.json  projetos em execucao
+    execution-capacity.json  capacidade mensal da equipe
+    execution/               ~130 JSONs individuais de detalhe de execucao (proj-XX-NNN.json)
+
+  src/main.tsx           bootstrap: QueryClientProvider + BrowserRouter + StrictMode
+  src/App.tsx            roteamento, sync de tema, useSentinelaTracker global, overlay do Security Guard
+  src/index.css          design system completo via CSS custom properties
+  src/assets/
+    baldan-logo.png      logotipo da Baldan
+
+  src/types/
+    domain.ts            espelho dos tipos do backend + PortfolioHighlights, PortfolioSummary, CapacityResponse
+
+  src/store/             Zustand com persist em localStorage
+    personaStore.ts      persona ativa (padrao: p-diretoria-1)                key: vetor-persona
+    weightsStore.ts      pesos das lentes, lentes custom, presets, preset ativo  key: vetor-priorizacao-pesos
+    paramsStore.ts       parametros de capacidade editaveis                    key: vetor-platform-params
+    sentinelaStore.ts    historico de eventos de navegacao (max 300)           key: vetor-sentinela
+    themeStore.ts        tema light/dark                                       key: vetor-theme
+    trlStore.ts          escala TRL editavel (9 niveis)                       key: vetor-trl-scale
+    uiStore.ts           estado do menu mobile (sem persist)
+
+  src/hooks/
+    usePortfolio.ts      TanStack Query hooks para todos os endpoints da API estatica
+    useLenses.ts         combina 8 lentes fixas com lentes custom do store
+    useSentinelaTracker.ts  registra cada navegacao como evento classificado por permissao
+
+  src/lib/
+    api.ts               camada de dados: fetch dos JSONs estaticos, filtragem e paginacao client-side
+    priority.ts          motor de priorizacao: score x peso normalizado, rankProjects
+    explainability.ts    texto em portugues explicando posicao no ranking (lente dominante/fraca)
+    aiSignals.ts         sinalizacoes de IA a partir de SPI/CPI e concentracao no funil
+    aiIntake.ts          IA de enquadramento de nova ideia: infere vertical/tipo/TRL/scores por keywords
+    execution.ts         calculo de fracao de progresso temporal (start->target vs. now)
+    format.ts            formatacao BR: moeda (K/mi), percentual, indice, data localizada
+    rankingStats.ts      divide ranking em 4 quartis e computa histograma com bins adaptativos
+    roadmap.ts           agrega projetos por ano e faixa TRL para grafico de roadmap
+
+  src/config/
+    profiles.ts          labels e descricoes dos 5 perfis (diretoria, pmo, area, controladoria, executor)
+    permissions.ts       capacidades por perfil + matriz de acesso por tela (edita/visualiza/-)
+    lenses.ts            8 lentes de priorizacao, pesos default, 4 presets prontos
+    navigation.tsx       grupos e itens do menu lateral com icones e badges de eixo (E1/E2/E3)
+    sentinela.ts         tipos, classifyAccess, buildSeedEvents, icones orbitais
+    trl.ts               escala TRL 1-9 adaptada a metalomecanica agricola Baldan
+    verticals.ts         mapa de nomes e ordem das 4 verticais
+    chartPalette.ts      paleta de dataviz: verticais, health, funil, TRL, lentes, faixas de prioridade
+
+  src/pages/
+    LoginPage.tsx        tela split (marca + blueprint a esquerda, formulario a direita), acesso rapido por perfil
+    DashboardPage.tsx    painel executivo: 4 KPIs, distribuicao por vertical, funil, saude, top prioridade, sinais IA
+    PriorizacaoPage.tsx  eixo 1: lentes & pesos / ranking ao vivo / analise IA, recalculo em tempo real
+    MaturidadePage.tsx   eixo 2: distribuicao TRL, roadmap empilhado, escala editavel, trajetoria
+    ExecucaoPage.tsx     eixo 3: picker de projeto, curva-S, status report, arvore de fases, capacidade
+    ProjetosPage.tsx     catalogo filtrado com detalhe lateral + formulario de submissao com analise IA
+    ParametrizacaoPage.tsx  cenarios (presets), parametros de capacidade, escala TRL, vocabulario do dominio
+    PerfisPage.tsx       cards de perfis, matriz de acesso, link para experiencia mobile
+    ColaboradorPage.tsx  app mobile do executor: PhoneFrame, tarefas/pontos/perfil, botoes Iniciar/Concluir
+    ModulePlaceholder.tsx  componente generico de "modulo em construcao"
+    AiPage.tsx           chat dedicado: logo Baldan, sugestoes, conversa com "Como a IA pensou"
+    WhatsAppPage.tsx     painel de conexao do WhatsApp: QR code, status, exemplos de uso
+    Security/
+      SecurityPage.tsx   overlay fullscreen: Brain Guard + SSH Guard, grafo SVG animado, feed ao vivo, modal de detalhe
+      brain.css          tema dark exclusivo, grid SVG, orbitas, nodes, animacoes, responsive
+
+  src/components/
+    ai/
+      AiOrb.tsx            botao flutuante (canto inferior direito) que abre o chat contextual por aba
+      AiChatModal.tsx      modal lateral tipo Messenger com titulo da aba, sumario vinculado e "Como a IA pensou"
+    layout/
+      AppShell.tsx         shell raiz: sidebar fixa + topbar + area principal com Outlet + AiOrb
+      Sidebar.tsx          navegacao escura, logo Baldan, grupos de menu com badges E1/E2/E3, drawer mobile
+      Topbar.tsx           cabecalho sticky: hamburger, busca, Sentinela, sino, tema, PersonaSwitcher
+      PersonaSwitcher.tsx  dropdown de 29 pessoas agrupadas por perfil para trocar persona
+    ui/
+      Badge.tsx            VerticalBadge (bolinha + nome) e HealthBadge (pill + icone por status)
+      Panel.tsx            container card com titulo, subtitulo e slot de action
+      ThemeToggle.tsx      toggle pill light/dark com icone Sol/Lua animado
+    dashboard/
+      KpiCard.tsx              card metrico com valor grande, icone, delta badge, meta-pares
+      AiSignalsPanel.tsx       lista de sinais critico/atencao com icone e texto gerado
+      FunnelPanel.tsx          barras horizontais proporcionais por estagio do funil
+      HealthDistribution.tsx   barra tricolor verde/ambar/vermelho + contadores de saude
+      PriorityListPanel.tsx    lista ranqueada dos top projetos com codigo, vertical e score
+      VerticalDistributionChart.tsx  BarChart horizontal com cor por vertical (Recharts)
+    priorizacao/
+      WeightsPanel.tsx         editor ao vivo de pesos: sliders + inputs por lente, presets, lente custom
+      LensWeightRow.tsx        linha de slider + input + descricao de uma lente
+      LensWeightDonut.tsx      donut da distribuicao de pesos com legenda (Recharts)
+      LiveRankingPanel.tsx     top 10 animado com framer-motion (flash verde/vermelho ao reordenar)
+      RankingTable.tsx         tabela paginada do ranking completo com busca
+      ExplainabilityPanel.tsx  detalhe de projeto: texto gerado, barras de contribuicao por lente
+      PriorityBandsChart.tsx   donut de 4 fatias (quartis) com tabela de faixas
+      ScoreHistogramChart.tsx  histograma de scores com bins adaptativos (Recharts)
+    maturidade/
+      TrlDistributionChart.tsx  BarChart horizontal de projetos por TRL 1-9, rampa azul
+      RoadmapChart.tsx          BarChart empilhado por ano (descoberta/validacao/escala)
+      TrlScalePanel.tsx         accordion de 9 niveis TRL com edicao inline e reset
+      TrajectoryPanel.tsx       lista dos 8 proximos projetos a escalar de TRL
+    execucao/
+      ExecutionProjectPicker.tsx  lista scrollavel com busca, progress bar e SPI/CPI
+      SCurveChart.tsx             LineChart de 3 series: planejado, real, projecao tracejada
+      StatusReportCard.tsx        card com SPI/CPI, resumo, riscos e proximos passos
+      ProjectStructureTree.tsx    arvore colapsavel fases -> etapas -> micro-etapas com status pills
+      CapacityBoard.tsx           executores com barra de pontos ganhos/comprometidos vs. meta
+    projetos/
+      ProjectCatalog.tsx     catalogo com filtros (vertical/tipo/funil/busca), lista paginada, detalhe lateral
+      SubmissionForm.tsx     formulario de nova ideia com analise IA deterministica + ajuste manual
+    sentinela/
+      SentinelaPanel.tsx     overlay fullscreen dark: contadores, grafo + log em tempo real
+      SentinelaGraph.tsx     SVG animado: nos, bezier coloridas, particulas, aneis orbitais, nucleo central
+    colaborador/
+      TaskCard.tsx           card mobile de micro-etapa: barra lateral, Iniciar/Concluir, pontos e prazo
+    parametrizacao/
+      PresetPreviewBar.tsx   barra empilhada colorida ("impressao digital" de um cenario de pesos)
+      PresetEditModal.tsx    modal de edicao de cenario: sliders, preview, nome/descricao, deletar custom
+      PresetCreateModal.tsx  modal de criacao de cenario do zero com seed inicial e sliders
+
+==============================
+CAMADA DE DADOS
+==============================
+
+  Nao ha banco de dados. O backend gera tudo em memoria na subida usando um
+  PRNG deterministico (mulberry32, seed 20240914). Reiniciar o backend recria
+  o portfolio identico. O snapshot.mjs exporta os dados como JSON estatico
+  para frontend/public/data/, permitindo publicar o front no GitHub Pages sem
+  servidor Node.
+
+  Em runtime, o frontend le os JSONs estaticos via fetch e faz filtragem,
+  paginacao e priorizacao client-side. Nao ha escrita, login real nem sessao.
+
+  Os stores Zustand (localStorage) persistem:
+    - persona ativa
+    - pesos de priorizacao e presets customizados
+    - parametros de capacidade
+    - escala TRL editada
+    - tema light/dark
+    - historico de navegacao do Sentinela
+
+==============================
+ENDPOINTS DA API
+==============================
+
+  GET /api/health
+  GET /api/verticals
+  GET /api/project-types
+  GET /api/funnel-stages
+  GET /api/parameters
+  GET /api/people
+  GET /api/portfolio/summary
+  GET /api/portfolio/highlights
+  GET /api/projects            ?vertical= &type= &funnelStage= &search= &limit= &offset=
+  GET /api/projects/:id
+  GET /api/execution/projects
+  GET /api/execution/capacity
+  GET /api/execution/:projectId
+  POST /api/ai/chat              { question, history? } → { answer, summaries, intent }
+  GET /api/ai/summaries          catalogo dos sumarios disponiveis
+  GET /api/ai/summaries/:id      texto de um sumario especifico (depuracao)
+  GET /api/ai/summaries-all      todos os sumarios combinados (depuracao)
+
+==============================
+INTELIGENCIA ARTIFICIAL
+==============================
+
+  RAG hibrido em 2 etapas, sem banco vetorial:
+
+  Etapa 1 — Router: recebe a pergunta, consulta o catalogo de 7 sumarios e
+  escolhe semanticamente quais sao relevantes (via IA).
+
+  Etapa 2 — Responder: carrega os sumarios selecionados (texto estruturado
+  gerado em tempo real a partir dos dados em memoria do backend), monta o
+  prompt com o contexto e gera a resposta final.
+
+  Fallback do cliente: Gemini tenta 3x; se falhar, Arcee tenta 3x; se
+  ainda falhar, retorna erro. Fail-fast em 4xx (auth/schema) — nao repete
+  o mesmo provider se o erro for deterministico. Timeout de 30s por chamada.
+
+  Variaveis de ambiente (.env na raiz):
+    GEMINI_API_KEY       chave da API Gemini
+    GEMINI_MODEL         modelo (padrao: gemini-2.5-flash)
+    ARCEE_API_KEY        chave da API Arcee
+    ARCEE_BASE_URL       base URL (padrao: https://api.arcee.ai/api/v1)
+    ARCEE_MODEL          modelo (padrao: Trinity-Large-Thinking)
+
+  7 sumarios disponiveis:
+    VISAO_GERAL          KPIs, saude, verticais, funil, criticos, top prioridade
+    PRIORIZACAO          ranking, faixas, top 10, media das 8 lentes
+    MATURIDADE           distribuicao TRL, roadmap, proximos a escalar
+    EXECUCAO             SPI/CPI, capacidade, sobrecarga da equipe
+    PROJETOS             catalogo completo dos 180 projetos
+    EQUIPE               29 membros por perfil, carga, vertical
+    SEGURANCA            descricao do Security Guard
+
+==============================
+SISTEMA DE PERFIS / PERSONAS
+==============================
+
+  5 perfis sem autenticacao real (troca via seletor na topbar, persiste em localStorage):
+
+  diretoria      visao total, aprova gates, edita parametros
+  pmo            governanca cross, edita TRL e pesos
+  area           gestao da propria vertical
+  controladoria  read-only financeiro
+  executor       micro-etapas no app mobile (PhoneFrame)
+
+  O Sentinela audita cada navegacao e classifica autorizado/bloqueado
+  usando a mesma matriz de permissoes de config/permissions.ts.
+
+==============================
+PRIORIZACAO (MOTOR)
+==============================
+
+  8 lentes fixas avaliam cada projeto (score 0-100):
+    alinhamento_estrategico, potencial_mercado, viabilidade_tecnica,
+    impacto_financeiro, risco, capacidade_execucao, inovacao, regulatorio_esg
+
+  4 presets de pesos prontos: Padrao Baldan, Foco Financeiro, Foco Estrategico, ESG & Regulatorio.
+  O usuario pode criar lentes customizadas e presets proprios.
+  Recalculo e reordenamento acontecem em tempo real ao mover os sliders.
+
+==============================
+DESIGN SYSTEM
+==============================
+
+  Destaque             #cb0a26 (vermelho Baldan)
+  Fundo light          #f5ede3 (bege quente)
+  Fundo dark           #0f0f0e
+  Sidebar              #141413 (sempre escura)
+  Sucesso              verde
+  Atencao              ambar
+  Info                 azul
+  Perigo               vermelho (= primary)
+
+  Fontes de interface  Effra / Inter (sans)
+  Fontes de display    Freight Macro Pro / Fraunces (serif italico)
+  Fonte mono           JetBrains Mono
+
+  Verticais: preparo-solo #8B5E34, plantio #2E7D32, pulverizacao #3B6FB0, pecas #828282
+  TRL: rampa sequencial de 9 tons azul
+  Lentes: paleta categorica de 8 tons
+
+  Suporta tema light e dark via toggle.
+  Animacoes: orbit-rotate, icon-float, ring, node-pulse (Sentinela).
+  Blueprint SVG mascarado no fundo da tela de login.
+  Componentes animados com Framer Motion (layout animation, flash de reordenamento).
+
+==============================
+SECURITY GUARD
+==============================
+
+  Overlay fullscreen dark (position:fixed, z-index sobre tudo) acessado
+  pela rota /seguranca no menu lateral. Fecha com botao ou Esc.
+
+  Dados 100% mocados via PRNG deterministico (mulberry32, seed 20240914).
+  Refresh automatico a cada 8 segundos com seed incremental, simulando
+  novos eventos em tempo real. Sem backend.
+
+  Tres tipos de ator:
+    USER      #22c55e (verde)   — acesso autenticado
+    BOT       #ff2f4f (vermelho) — requisicao sem sessao
+    SSH_TRY   #a855f7 (roxo)    — tentativa de acesso SSH
+
+  Layout:
+    - Topbar: marca VETOR Guard, 4 contadores (USER/BOT/SSH/TOTAL),
+      status online, hora, botoes Atualizar/Limpar/Fechar
+    - Grafo SVG: nos por source com bezier animadas ate o nucleo central,
+      orbitas giratórias, 6 icones de seguranca flutuando, nucleo VETOR
+    - Feed lateral: 10 eventos mais recentes com actor/status/path/raw_log
+    - Modal de detalhe: ao clicar num no, lista ate 30 eventos do source
+
+  Tema escuro exclusivo (brain.css), fundo #0b141a com grid SVG,
+  fonte Oswald para titulos e numeros, Consolas para IPs e logs.
+  Mesma arquitetura visual do Spendio Guard.
+
+==============================
+WHATSAPP IA (ZAPPER)
+==============================
+
+  Bot de WhatsApp via Baileys (WhatsApp Web). Roda separado do backend.
+
+  Estrutura:
+    zapper/
+      package.json         Baileys + qrcode
+      start.js             entry point: carrega .env da raiz e local, inicia main()
+      script/
+        index.js           orquestrador: control-server primeiro, depois bot
+        bot.js             conexao WhatsApp, QR code via qrcode lib, reconexao automatica
+        bridge-state.js    estado compartilhado (status, qr data URL, jid)
+        control-server.js  HTTP na porta 3031: /health, /session (com QR)
+        message-handler.js filtra mensagens, so responde /baldan, chama POST /api/ai/chat
+
+  Comando: /baldan <pergunta>
+    - Mensagem sem /baldan: ignorada silenciosamente
+    - /baldan sozinho: instrucoes de uso
+    - /baldan <texto>: chama a IA, responde com a resposta + raciocinio em *negrito*
+
+  Como iniciar:
+    npm run zapper        (ou cd zapper && npm start)
+    O backend precisa estar rodando (porta 4000) para a IA funcionar.
+
+  Frontend: aba "WhatsApp IA" (/whatsapp) exibe o QR code para escaneamento,
+  status da conexao e exemplos de uso. Faz polling a cada 3s no /session.
