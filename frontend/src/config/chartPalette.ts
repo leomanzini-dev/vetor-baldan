@@ -40,12 +40,14 @@ export const chartChrome = {
   tooltipBorder: { light: "#E2DACB", dark: "#37342F" },
 };
 
-// Rampa sequencial (azul) da paleta de referência da skill de dataviz — usada
-// para codificação ORDINAL (TRL 1→9: mais escuro = mais maduro). Passos
-// escolhidos respeitando os pisos de contraste da skill: em claro, nunca mais
-// claro que o passo 250; em escuro, nunca mais escuro que o passo 600.
-export const trlRampLight = ["#86b6ef", "#6da7ec", "#5598e7", "#3987e5", "#2a78d6", "#256abf", "#1c5cab", "#184f95", "#104281"];
-export const trlRampDark = ["#9ec5f4", "#86b6ef", "#6da7ec", "#5598e7", "#3987e5", "#2a78d6", "#256abf", "#1c5cab", "#184f95"];
+// Rampa sequencial no vermelho da marca Baldan (mesmo matiz de --primary) —
+// usada para codificação ORDINAL (TRL 1→9: mais escuro = mais maduro; também
+// reaproveitada para o funil de estágios do funnel de inovação). Gerada e
+// validada com o script da skill de dataviz (--ordinal): matiz única, L
+// monotônica, gap adjacente >=0.06 OKLab, ponta clara/escura sempre >=2:1
+// contra a superfície (claro sobre #f5ede3, escuro sobre #141413/#201f1d).
+export const trlRampLight = ["#f27d91", "#ed4a65", "#df1637", "#ac112b", "#820d20", "#5d0917", "#410610", "#1c0307", "#050001"];
+export const trlRampDark = ["#fefbfc", "#f3dfe2", "#e8c2c8", "#dda5af", "#d28995", "#c76c7b", "#bc4f62", "#a53f50", "#893442"];
 
 export function trlColor(level: number, mode: "light" | "dark"): string {
   const ramp = mode === "dark" ? trlRampDark : trlRampLight;

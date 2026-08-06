@@ -7,7 +7,7 @@ import {
   FolderKanban,
   SlidersHorizontal,
   Users,
-  Shield,
+  ShieldCheck,
   Sparkles,
   MessageCircle,
 } from "lucide-react";
@@ -58,7 +58,7 @@ export const navGroups: NavGroup[] = [
     items: [
       { label: "Parametrização", path: "/parametrizacao", icon: SlidersHorizontal, moduleStatus: "upcoming" },
       { label: "Perfis & Acessos", path: "/perfis", icon: Users, moduleStatus: "upcoming" },
-      { label: "Security", path: "/seguranca", icon: Shield, moduleStatus: "upcoming" },
+      { label: "Sentinela", path: "/sentinela", icon: ShieldCheck, moduleStatus: "upcoming" },
     ],
   },
 ];

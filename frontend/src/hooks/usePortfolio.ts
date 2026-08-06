@@ -48,3 +48,7 @@ export function useExecutionDetail(projectId: string | null) {
 export function useCapacitySummary() {
   return useQuery({ queryKey: ["capacity-summary"], queryFn: api.getCapacitySummary });
 }
+
+export function usePortfolioScurve() {
+  return useQuery({ queryKey: ["portfolio-scurve"], queryFn: api.getPortfolioScurve });
+}

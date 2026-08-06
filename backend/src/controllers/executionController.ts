@@ -18,4 +18,8 @@ export const executionController = {
   getCapacitySummary(_req: Request, res: Response) {
     res.json({ currentMonth: executionService.getCurrentMonthKey(), summary: executionService.getCapacitySummary() });
   },
+
+  getPortfolioScurve(_req: Request, res: Response) {
+    res.json(executionService.getPortfolioScurve());
+  },
 };

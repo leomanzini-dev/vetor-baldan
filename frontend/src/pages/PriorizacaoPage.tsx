@@ -2,19 +2,19 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   SlidersHorizontal,
   ListOrdered,
-  Sparkles,
   PieChart as PieChartIcon,
   ArrowUpDown,
   Tag,
   Gauge,
   Trophy,
   Target,
+  X,
 } from "lucide-react";
 import { useProjects } from "@/hooks/usePortfolio";
 import { useWeightsStore } from "@/store/weightsStore";
 import { useAllLenses } from "@/hooks/useLenses";
 import { rankProjects } from "@/lib/priority";
-import { computePriorityBands, computeScoreHistogram } from "@/lib/rankingStats";
+import { computePriorityBands, computeScoreHistogram, type HistogramBucket, type PriorityBand } from "@/lib/rankingStats";
 import { defaultWeights, lensDefs } from "@/config/lenses";
 import { Panel } from "@/components/ui/Panel";
 import { KpiCard } from "@/components/dashboard/KpiCard";
@@ -24,14 +24,21 @@ import { LiveRankingPanel } from "@/components/priorizacao/LiveRankingPanel";
 import { ScoreHistogramChart } from "@/components/priorizacao/ScoreHistogramChart";
 import { PriorityBandsChart } from "@/components/priorizacao/PriorityBandsChart";
 import { RankingTable } from "@/components/priorizacao/RankingTable";
-import { ExplainabilityPanel } from "@/components/priorizacao/ExplainabilityPanel";
+import { ProjectDetailModal } from "@/components/priorizacao/ProjectDetailModal";
 
-type Tab = "lentes" | "ranking" | "analise";
+interface ScoreFilter {
+  source: "histogram" | "bands";
+  key: string;
+  displayLabel: string;
+  from: number;
+  to: number;
+}
+
+type Tab = "lentes" | "ranking";
 
 const tabs: { id: Tab; label: string; icon: typeof SlidersHorizontal }[] = [
   { id: "lentes", label: "Lentes & Pesos", icon: SlidersHorizontal },
   { id: "ranking", label: "Ranking", icon: ListOrdered },
-  { id: "analise", label: "Análise IA", icon: Sparkles },
 ];
 
 export function PriorizacaoPage() {
@@ -40,6 +47,8 @@ export function PriorizacaoPage() {
   const allLenses = useAllLenses();
   const [tab, setTab] = useState<Tab>("lentes");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [modalProjectId, setModalProjectId] = useState<string | null>(null);
+  const [scoreFilter, setScoreFilter] = useState<ScoreFilter | null>(null);
 
   const ranked = useMemo(
     () => (data ? rankProjects(data.items, weights, allLenses) : []),
@@ -49,9 +58,6 @@ export function PriorizacaoPage() {
   useEffect(() => {
     if (!selectedId && ranked.length > 0) setSelectedId(ranked[0].project.id);
   }, [ranked, selectedId]);
-
-  const selectedIndex = ranked.findIndex((s) => s.project.id === selectedId);
-  const selected = selectedIndex >= 0 ? ranked[selectedIndex] : null;
 
   // Quanto cada projeto subiu/desceu no ranking desde o último ajuste de peso —
   // alimenta o badge de variação e o flash de animação do Top 10 ao vivo.
@@ -108,6 +114,38 @@ export function PriorizacaoPage() {
   const leader = ranked[0];
   const prioritarioBand = priorityBands.find((b) => b.id === "prioritario");
 
+  // Clicar numa barra do histograma ou numa fatia das faixas filtra a tabela
+  // do ranking pela mesma faixa de score — clicar de novo no mesmo limpa.
+  const filteredRanked = useMemo(() => {
+    if (!scoreFilter) return ranked;
+    return ranked.filter((s) => s.total >= scoreFilter.from && s.total <= scoreFilter.to);
+  }, [ranked, scoreFilter]);
+
+  function toggleHistogramFilter(bucket: HistogramBucket) {
+    setScoreFilter((prev) =>
+      prev?.source === "histogram" && prev.key === bucket.rangeLabel
+        ? null
+        : { source: "histogram", key: bucket.rangeLabel, displayLabel: `${bucket.rangeLabel} pts`, from: bucket.from, to: bucket.to }
+    );
+  }
+
+  function toggleBandFilter(band: PriorityBand) {
+    if (band.count === 0) return;
+    setScoreFilter((prev) =>
+      prev?.source === "bands" && prev.key === band.id
+        ? null
+        : { source: "bands", key: band.id, displayLabel: band.label, from: band.minScore, to: band.maxScore }
+    );
+  }
+
+  function openProjectModal(id: string) {
+    setSelectedId(id);
+    setModalProjectId(id);
+  }
+
+  const modalIndex = modalProjectId ? ranked.findIndex((s) => s.project.id === modalProjectId) : -1;
+  const modalScored = modalIndex >= 0 ? ranked[modalIndex] : null;
+
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -139,7 +177,7 @@ export function PriorizacaoPage() {
 
       {tab === "lentes" && (
         <div className="flex flex-col gap-5">
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
             <KpiCard
               label="Lentes ativas"
               value={String(allLenses.length)}
@@ -178,18 +216,17 @@ export function PriorizacaoPage() {
           <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[7fr_3fr]">
             <WeightsPanel />
             <div className="flex flex-col gap-5">
-              <div className="rounded-card border border-border bg-surface p-5 shadow-token-sm">
-                <div className="mb-4 flex items-center gap-2">
+              <Panel
+                title="Distribuição de Pesos"
+                subtitle="% configurado por lente"
+                action={
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-app-alt text-text-secondary">
                     <Tag className="h-4 w-4" />
                   </span>
-                  <div>
-                    <h3 className="text-[13px] font-semibold text-text">Distribuição de Pesos</h3>
-                    <p className="text-[11px] text-text-tertiary">% configurado por lente</p>
-                  </div>
-                </div>
+                }
+              >
                 <LensWeightDonut lenses={allLenses} weights={weights} />
-              </div>
+              </Panel>
               <LiveRankingPanel
                 top={ranked.slice(0, 10)}
                 deltas={rankDeltas}
@@ -203,7 +240,7 @@ export function PriorizacaoPage() {
 
       {tab === "ranking" && (
         <div className="flex flex-col gap-5">
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
             <KpiCard label="Projetos no ranking" value={String(ranked.length)} icon={ListOrdered} />
             <KpiCard label="Score médio" value={avgScore.toFixed(1)} icon={Gauge} />
             <KpiCard
@@ -221,33 +258,50 @@ export function PriorizacaoPage() {
             />
           </div>
 
-          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-            <div className="rounded-card border border-border bg-surface p-5 shadow-token-sm">
-              <h3 className="text-[13px] font-semibold text-text">Distribuição de Scores</h3>
-              <p className="mb-2 text-[11px] text-text-tertiary">Como o portfólio se espalha na escala calculada</p>
-              <ScoreHistogramChart buckets={scoreHistogram} />
-            </div>
-            <div className="rounded-card border border-border bg-surface p-5 shadow-token-sm">
-              <h3 className="text-[13px] font-semibold text-text">Composição por Faixa</h3>
-              <p className="mb-4 text-[11px] text-text-tertiary">Quartis do ranking com os pesos atuais</p>
-              <PriorityBandsChart bands={priorityBands} />
-            </div>
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(420px,1fr))] gap-5">
+            <Panel title="Distribuição de Scores" subtitle="Como o portfólio se espalha na escala calculada · clique numa barra pra filtrar">
+              <ScoreHistogramChart
+                buckets={scoreHistogram}
+                activeRangeLabel={scoreFilter?.source === "histogram" ? scoreFilter.key : null}
+                onSelectBucket={toggleHistogramFilter}
+              />
+            </Panel>
+            <Panel title="Composição por Faixa" subtitle="Quartis do ranking com os pesos atuais · clique numa faixa pra filtrar">
+              <PriorityBandsChart
+                bands={priorityBands}
+                activeBandId={scoreFilter?.source === "bands" ? scoreFilter.key : null}
+                onSelectBand={toggleBandFilter}
+              />
+            </Panel>
           </div>
 
-          <Panel title="Ranking do Portfólio" subtitle="Recalculado com os pesos atuais">
-            <RankingTable scored={ranked} selectedId={selectedId} onSelect={setSelectedId} />
+          <Panel
+            title="Ranking do Portfólio"
+            subtitle="Recalculado com os pesos atuais · clique num projeto para ver o detalhamento"
+            action={
+              scoreFilter && (
+                <button
+                  onClick={() => setScoreFilter(null)}
+                  className="flex shrink-0 items-center gap-1.5 rounded-full border border-primary bg-primary-soft px-3 py-1.5 text-[11.5px] font-semibold text-primary transition-colors hover:bg-primary/20"
+                >
+                  Filtrado: {scoreFilter.displayLabel}
+                  <X className="h-3 w-3" />
+                </button>
+              )
+            }
+          >
+            <RankingTable scored={filteredRanked} selectedId={selectedId} onSelect={openProjectModal} />
           </Panel>
         </div>
       )}
 
-      {tab === "analise" && (
-        <Panel title="Por que esta posição?" subtitle="Explicabilidade do resultado, com apoio de IA">
-          {selected ? (
-            <ExplainabilityPanel scored={selected} rank={selectedIndex + 1} totalCount={ranked.length} />
-          ) : (
-            <p className="py-8 text-center text-[13px] text-text-tertiary">Selecione um projeto no ranking.</p>
-          )}
-        </Panel>
+      {modalScored && (
+        <ProjectDetailModal
+          scored={modalScored}
+          rank={modalIndex + 1}
+          totalCount={ranked.length}
+          onClose={() => setModalProjectId(null)}
+        />
       )}
     </div>
   );

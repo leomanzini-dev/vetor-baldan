@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Send, Sparkles, Loader2, Bot, User, Trash2, Brain } from "lucide-react";
+import { Send, Loader2, Bot, User, Trash2, Brain } from "lucide-react";
 import baldanLogo from "@/assets/baldan-logo.png";
 
 interface Message {

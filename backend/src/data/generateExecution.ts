@@ -43,7 +43,7 @@ function toISODate(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
-function timeProgressFraction(project: Project, now: Date): number {
+export function timeProgressFraction(project: Project, now: Date): number {
   const start = new Date(project.startDate).getTime();
   const end = new Date(project.targetDate).getTime();
   if (end <= start) return 1;
@@ -172,7 +172,7 @@ function buildSCurve(project: Project, now: Date, rand: () => number): SCurvePoi
   return points;
 }
 
-function sCurve(t: number): number {
+export function sCurve(t: number): number {
   // logística suave 0→1
   const k = 8;
   return 1 / (1 + Math.exp(-k * (t - 0.5)));

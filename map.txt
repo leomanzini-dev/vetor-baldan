@@ -60,7 +60,7 @@ backend/                 API Express em TypeScript (porta 4000)
     executionService.ts    filtra projetos em execucao/encerrados, detalhe por projeto, capacidade mensal por executor
   src/routes/
     portfolioRoutes.ts     registra endpoints de portfolio no router
-    executionRoutes.ts     registra endpoints de execucao no router
+    executionRoutes.ts     registra endpoints de execucao no router (inclui /scurve-portfolio)
   src/ia/                  modulo de IA com fallback Gemini 3x + Arcee 3x
     client.ts              cliente compartilhado: Gemini 3x → Arcee 3x → erro, timeout 30s, fail-fast em 4xx
     router.ts              etapa 1 do RAG: interpreta a pergunta, escolhe sumarios pelo catalogo
@@ -108,10 +108,11 @@ frontend/                React 19 + Vite 8 + TailwindCSS 4 + TypeScript
     portfolio-highlights.json  criticos + top prioridade
     execution-projects.json  projetos em execucao
     execution-capacity.json  capacidade mensal da equipe
-    execution/               ~130 JSONs individuais de detalhe de execucao (proj-XX-NNN.json)
+    execution-scurve.json    curva-S agregada do portfolio (baseline x real x projecao IA, eixo normalizado por % de prazo)
+    execution/               ~66 JSONs individuais de detalhe de execucao (proj-XX-NNN.json)
 
   src/main.tsx           bootstrap: QueryClientProvider + BrowserRouter + StrictMode
-  src/App.tsx            roteamento, sync de tema, useSentinelaTracker global, overlay do Security Guard
+  src/App.tsx            roteamento, sync de tema, useSentinelaTracker global, overlay do Security Guard, rota /sentinela abre/fecha o painel Sentinela
   src/index.css          design system completo via CSS custom properties
   src/assets/
     baldan-logo.png      logotipo da Baldan
@@ -137,18 +138,19 @@ frontend/                React 19 + Vite 8 + TailwindCSS 4 + TypeScript
     api.ts               camada de dados: fetch dos JSONs estaticos, filtragem e paginacao client-side
     priority.ts          motor de priorizacao: score x peso normalizado, rankProjects
     explainability.ts    texto em portugues explicando posicao no ranking (lente dominante/fraca)
-    aiSignals.ts         sinalizacoes de IA a partir de SPI/CPI e concentracao no funil
+    aiSignals.ts         sinalizacoes de IA (risco/atencao/oportunidade) a partir de SPI/CPI, concentracao no funil, capacidade e projetos represados
     aiIntake.ts          IA de enquadramento de nova ideia: infere vertical/tipo/TRL/scores por keywords
     execution.ts         calculo de fracao de progresso temporal (start->target vs. now)
     format.ts            formatacao BR: moeda (K/mi), percentual, indice, data localizada
     rankingStats.ts      divide ranking em 4 quartis e computa histograma com bins adaptativos
-    roadmap.ts           agrega projetos por ano e faixa TRL para grafico de roadmap
+    roadmap.ts           agrega projetos por ano/faixa TRL, projeta TRL futuro por projeto, CAPEX acumulado e por vertical, payback estimado
+    lensStats.ts         media de score do portfolio por lente (perfil estrategico agregado)
 
   src/config/
     profiles.ts          labels e descricoes dos 5 perfis (diretoria, pmo, area, controladoria, executor)
     permissions.ts       capacidades por perfil + matriz de acesso por tela (edita/visualiza/-)
     lenses.ts            8 lentes de priorizacao, pesos default, 4 presets prontos
-    navigation.tsx       grupos e itens do menu lateral com icones e badges de eixo (E1/E2/E3)
+    navigation.tsx       grupos e itens do menu lateral com icones e badges de eixo (E1/E2/E3); item "Sentinela" abre o mesmo painel do icone da topbar
     sentinela.ts         tipos, classifyAccess, buildSeedEvents, icones orbitais
     trl.ts               escala TRL 1-9 adaptada a metalomecanica agricola Baldan
     verticals.ts         mapa de nomes e ordem das 4 verticais
@@ -156,9 +158,9 @@ frontend/                React 19 + Vite 8 + TailwindCSS 4 + TypeScript
 
   src/pages/
     LoginPage.tsx        tela split (marca + blueprint a esquerda, formulario a direita), acesso rapido por perfil
-    DashboardPage.tsx    painel executivo: 4 KPIs, distribuicao por vertical, funil, saude, top prioridade, sinais IA
-    PriorizacaoPage.tsx  eixo 1: lentes & pesos / ranking ao vivo / analise IA, recalculo em tempo real
-    MaturidadePage.tsx   eixo 2: distribuicao TRL, roadmap empilhado, escala editavel, trajetoria
+    DashboardPage.tsx    painel executivo: hero com indice de saude, KPIs financeiros/capacidade, distribuicao por vertical, funil, saude, curva-S do portfolio, perfil estrategico por lente, prioridade, insights de IA + briefing executivo sob demanda
+    PriorizacaoPage.tsx  eixo 1: abas Lentes & Pesos / Ranking, recalculo em tempo real, graficos filtraveis (clique filtra a tabela), modal de detalhamento por projeto
+    MaturidadePage.tsx   eixo 2: aba Funil (funil de maturidade TRL 1-9 clicavel, escala editavel, trajetoria) e aba Roadmap (projecao TRL 5 anos por projeto, evolucao no tempo, CAPEX/ROI/payback)
     ExecucaoPage.tsx     eixo 3: picker de projeto, curva-S, status report, arvore de fases, capacidade
     ProjetosPage.tsx     catalogo filtrado com detalhe lateral + formulario de submissao com analise IA
     ParametrizacaoPage.tsx  cenarios (presets), parametros de capacidade, escala TRL, vocabulario do dominio
@@ -186,25 +188,36 @@ frontend/                React 19 + Vite 8 + TailwindCSS 4 + TypeScript
       ThemeToggle.tsx      toggle pill light/dark com icone Sol/Lua animado
     dashboard/
       KpiCard.tsx              card metrico com valor grande, icone, delta badge, meta-pares
-      AiSignalsPanel.tsx       lista de sinais critico/atencao com icone e texto gerado
-      FunnelPanel.tsx          barras horizontais proporcionais por estagio do funil
+      HealthMeter.tsx          meter linear do indice de saude composto do portfolio (status + SPI/CPI)
+      AiInsightsPanel.tsx      grid de cards de sinais (risco/atencao/oportunidade) com icone e faixa colorida
+      AiBriefingCard.tsx       briefing executivo gerado pela IA de verdade (POST /api/ai/chat), sob demanda, com atalhos rapidos
+      FunnelPanel.tsx          barras horizontais proporcionais por estagio do funil, rampa ordinal (vermelho)
       HealthDistribution.tsx   barra tricolor verde/ambar/vermelho + contadores de saude
-      PriorityListPanel.tsx    lista ranqueada dos top projetos com codigo, vertical e score
+      PriorityListPanel.tsx    lista ranqueada dos top projetos com codigo, vertical, score e mini-barra
+      LensProfileChart.tsx     barra horizontal com a media das 8 lentes de priorizacao no portfolio
       VerticalDistributionChart.tsx  BarChart horizontal com cor por vertical (Recharts)
+      PortfolioSCurveChart.tsx  curva-S agregada: baseline planejado x execucao real x projecao IA, eixo normalizado por % de prazo
     priorizacao/
       WeightsPanel.tsx         editor ao vivo de pesos: sliders + inputs por lente, presets, lente custom
       LensWeightRow.tsx        linha de slider + input + descricao de uma lente
-      LensWeightDonut.tsx      donut da distribuicao de pesos com legenda (Recharts)
+      LensWeightDonut.tsx      donut da distribuicao de pesos com legenda (Recharts), hover sincronizado (sem tooltip flutuante)
       LiveRankingPanel.tsx     top 10 animado com framer-motion (flash verde/vermelho ao reordenar)
-      RankingTable.tsx         tabela paginada do ranking completo com busca
-      ExplainabilityPanel.tsx  detalhe de projeto: texto gerado, barras de contribuicao por lente
-      PriorityBandsChart.tsx   donut de 4 fatias (quartis) com tabela de faixas
-      ScoreHistogramChart.tsx  histograma de scores com bins adaptativos (Recharts)
+      RankingTable.tsx         tabela paginada do ranking completo com busca, clique abre ProjectDetailModal
+      ProjectDetailModal.tsx   modal com ExplainabilityPanel completo do projeto clicado no ranking
+      ExplainabilityPanel.tsx  detalhe de projeto: indicadores (TRL/SPI/CPI/TIR/VPL/ROI/CAPEX), prazo e orcamento, lider/patrocinador, texto gerado, barras de contribuicao por lente
+      PriorityBandsChart.tsx   donut de 4 fatias (quartis), clicavel para filtrar a tabela do ranking, hover sincronizado com a legenda
+      ScoreHistogramChart.tsx  histograma de scores com bins adaptativos (Recharts), clicavel para filtrar a tabela do ranking
     maturidade/
-      TrlDistributionChart.tsx  BarChart horizontal de projetos por TRL 1-9, rampa azul
-      RoadmapChart.tsx          BarChart empilhado por ano (descoberta/validacao/escala)
+      MaturityFunnelChart.tsx   funil de maturidade (TRL 1 mais largo a TRL 9 mais fino), altura sincronizada via ResizeObserver, clicavel por nivel
+      TrlLevelProjectsModal.tsx modal com descricao do nivel TRL clicado + lista de projetos naquele nivel
       TrlScalePanel.tsx         accordion de 9 niveis TRL com edicao inline e reset
       TrajectoryPanel.tsx       lista dos 8 proximos projetos a escalar de TRL
+      MaturityStreamChart.tsx   area empilhada suavizada por ano (descoberta/validacao/escala), linha do ano corrente
+      CapexEvolutionChart.tsx   area do CAPEX comprometido acumulado por ano
+      InvestmentByVerticalChart.tsx  donut de CAPEX por vertical, hover sincronizado
+      TopVplChart.tsx           barra horizontal dos 10 projetos com maior VPL
+      PortfolioRoadmapTable.tsx tabela paginada/buscavel: projeto, responsavel, inicio, heatmap de TRL projetado (5 anos), CAPEX, ROI previsto (multiplicador + valor), payback estimado, status, score
+      ProjectRoadmapModal.tsx   modal "Detalhes do Projeto": stepper de evolucao TRL, financeiro (CAPEX/realizado/VPL/TIR/ROI/payback), scores reais (risco tecnologico/ESG/aderencia), descricao
     execucao/
       ExecutionProjectPicker.tsx  lista scrollavel com busca, progress bar e SPI/CPI
       SCurveChart.tsx             LineChart de 3 series: planejado, real, projecao tracejada
@@ -261,6 +274,7 @@ ENDPOINTS DA API
   GET /api/projects/:id
   GET /api/execution/projects
   GET /api/execution/capacity
+  GET /api/execution/scurve-portfolio  curva-S agregada (baseline x real x projecao), eixo normalizado por % de prazo decorrido
   GET /api/execution/:projectId
   POST /api/ai/chat              { question, history? } → { answer, summaries, intent }
   GET /api/ai/summaries          catalogo dos sumarios disponiveis
@@ -313,7 +327,10 @@ SISTEMA DE PERFIS / PERSONAS
   executor       micro-etapas no app mobile (PhoneFrame)
 
   O Sentinela audita cada navegacao e classifica autorizado/bloqueado
-  usando a mesma matriz de permissoes de config/permissions.ts.
+  usando a mesma matriz de permissoes de config/permissions.ts. Acessivel
+  pelo icone na topbar (ao lado do sino) ou pelo item "Sentinela" no menu
+  lateral (rota /sentinela, so serve de gatilho para abrir/fechar o overlay
+  global controlado por sentinelaStore — nao renderiza conteudo proprio).
 
 ==============================
 PRIORIZACAO (MOTOR)
@@ -345,7 +362,7 @@ DESIGN SYSTEM
   Fonte mono           JetBrains Mono
 
   Verticais: preparo-solo #8B5E34, plantio #2E7D32, pulverizacao #3B6FB0, pecas #828282
-  TRL: rampa sequencial de 9 tons azul
+  TRL: rampa sequencial de 9 tons vermelhos (matiz do primary, validada pela skill de dataviz), tambem reaproveitada no funil de inovacao do Dashboard
   Lentes: paleta categorica de 8 tons
 
   Suporta tema light e dark via toggle.
@@ -357,8 +374,10 @@ DESIGN SYSTEM
 SECURITY GUARD
 ==============================
 
-  Overlay fullscreen dark (position:fixed, z-index sobre tudo) acessado
-  pela rota /seguranca no menu lateral. Fecha com botao ou Esc.
+  Overlay fullscreen dark (position:fixed, z-index sobre tudo) na rota
+  /seguranca. Sem link no menu lateral (o item de menu agora abre o
+  Sentinela, ver SISTEMA DE PERFIS / PERSONAS) — ainda acessivel por URL
+  direta. Fecha com botao ou Esc.
 
   Dados 100% mocados via PRNG deterministico (mulberry32, seed 20240914).
   Refresh automatico a cada 8 segundos com seed incremental, simulando

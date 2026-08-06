@@ -3,7 +3,13 @@ import { useThemeStore } from "@/store/themeStore";
 import { chartChrome, pickThemed } from "@/config/chartPalette";
 import type { HistogramBucket } from "@/lib/rankingStats";
 
-export function ScoreHistogramChart({ buckets }: { buckets: HistogramBucket[] }) {
+interface Props {
+  buckets: HistogramBucket[];
+  activeRangeLabel?: string | null;
+  onSelectBucket?: (bucket: HistogramBucket) => void;
+}
+
+export function ScoreHistogramChart({ buckets, activeRangeLabel, onSelectBucket }: Props) {
   const mode = useThemeStore((s) => s.mode);
   const axisColor = pickThemed(mode, chartChrome.axisText);
   const gridColor = pickThemed(mode, chartChrome.gridline);
@@ -28,10 +34,21 @@ export function ScoreHistogramChart({ buckets }: { buckets: HistogramBucket[] })
           content={<HistTooltip mode={mode} />}
           cursor={{ fill: pickThemed(mode, { light: "rgba(11,11,11,0.04)", dark: "rgba(255,255,255,0.05)" }) }}
         />
-        <Bar dataKey="count" radius={[4, 4, 0, 0]} maxBarSize={38} isAnimationActive animationDuration={420}>
-          {buckets.map((b, i) => (
-            <Cell key={b.rangeLabel} fill={barColor} fillOpacity={0.4 + (i / Math.max(buckets.length - 1, 1)) * 0.6} />
-          ))}
+        <Bar
+          dataKey="count"
+          radius={[4, 4, 0, 0]}
+          maxBarSize={38}
+          isAnimationActive
+          animationDuration={420}
+          className="cursor-pointer"
+          onClick={(data) => onSelectBucket?.(data as unknown as HistogramBucket)}
+        >
+          {buckets.map((b, i) => {
+            const isActive = activeRangeLabel === b.rangeLabel;
+            const baseOpacity = 0.4 + (i / Math.max(buckets.length - 1, 1)) * 0.6;
+            const opacity = activeRangeLabel ? (isActive ? 1 : 0.25) : baseOpacity;
+            return <Cell key={b.rangeLabel} fill={barColor} fillOpacity={opacity} stroke={isActive ? barColor : "none"} strokeWidth={isActive ? 2 : 0} />;
+          })}
         </Bar>
       </BarChart>
     </ResponsiveContainer>
@@ -56,7 +73,7 @@ function HistTooltip({
     >
       <p className="font-semibold text-text">{bucket.rangeLabel} pontos</p>
       <p className="font-mono text-text-secondary">
-        {bucket.count} projeto{bucket.count === 1 ? "" : "s"}
+        {bucket.count} projeto{bucket.count === 1 ? "" : "s"} · clique para filtrar
       </p>
     </div>
   );

@@ -10,7 +10,7 @@ interface PanelProps {
 
 export function Panel({ title, subtitle, action, children, className = "" }: PanelProps) {
   return (
-    <div className={`rounded-card border border-border bg-surface shadow-token-sm ${className}`}>
+    <div className={`flex h-full flex-col rounded-card border border-border bg-surface shadow-token-sm ${className}`}>
       <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
         <div>
           <h3 className="text-[15px] font-semibold text-text">{title}</h3>
@@ -18,7 +18,7 @@ export function Panel({ title, subtitle, action, children, className = "" }: Pan
         </div>
         {action}
       </div>
-      <div className="p-5">{children}</div>
+      <div className="flex flex-1 flex-col justify-center p-5">{children}</div>
     </div>
   );
 }

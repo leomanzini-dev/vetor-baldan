@@ -27,8 +27,8 @@ export function AiOrb() {
 
   const ctx = PAGE_CONTEXT[location.pathname] ?? FALLBACK;
 
-  // Não mostrar o orb na página da IA (já tem chat próprio) nem na segurança (overlay)
-  if (location.pathname === "/ia" || location.pathname === "/seguranca") return null;
+  // Não mostrar o orb na página da IA (já tem chat próprio) nem nos overlays fullscreen
+  if (location.pathname === "/ia" || location.pathname === "/seguranca" || location.pathname === "/sentinela") return null;
 
   return (
     <>

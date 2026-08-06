@@ -50,6 +50,9 @@ async function main() {
   const capacity = await getJson("/execution/capacity");
   await writeJson("execution-capacity.json", capacity);
 
+  const scurvePortfolio = await getJson("/execution/scurve-portfolio");
+  await writeJson("execution-scurve.json", scurvePortfolio);
+
   for (const project of executionProjects) {
     const detail = await getJson(`/execution/${project.id}`);
     await writeJson(`execution/${project.id}.json`, detail);
