@@ -7,6 +7,9 @@ import {
   FolderKanban,
   SlidersHorizontal,
   Users,
+  ShieldCheck,
+  Sparkles,
+  MessageCircle,
 } from "lucide-react";
 
 export interface NavItem {
@@ -44,10 +47,18 @@ export const navGroups: NavGroup[] = [
     ],
   },
   {
+    title: "Inteligência",
+    items: [
+      { label: "VETOR IA", path: "/ia", icon: Sparkles, moduleStatus: "upcoming" },
+      { label: "WhatsApp IA", path: "/whatsapp", icon: MessageCircle, moduleStatus: "upcoming" },
+    ],
+  },
+  {
     title: "Administração",
     items: [
       { label: "Parametrização", path: "/parametrizacao", icon: SlidersHorizontal, moduleStatus: "upcoming" },
       { label: "Perfis & Acessos", path: "/perfis", icon: Users, moduleStatus: "upcoming" },
+      { label: "Sentinela", path: "/sentinela", icon: ShieldCheck, moduleStatus: "upcoming" },
     ],
   },
 ];

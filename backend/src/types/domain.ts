@@ -162,3 +162,20 @@ export interface CapacitySummary {
   pointsCommitted: number; // earned + pendentes/em-andamento
   microStages: MicroStage[];
 }
+
+// Curva-S agregada de todo o portfólio em execução — eixo normalizado (%
+// de prazo decorrido, 0-100) em vez de mês calendário, pois cada projeto
+// tem datas de início/fim próprias.
+export interface PortfolioScurvePoint {
+  tPct: number; // 0-100, % do prazo decorrido (normalizado)
+  plannedPct: number;
+  actualPct: number | null;
+  projectedPct: number | null;
+}
+
+export interface PortfolioScurve {
+  points: PortfolioScurvePoint[];
+  progressPct: number; // % médio de prazo decorrido entre os projetos em execução/encerrados — o "hoje" do gráfico
+  avgSpi: number;
+  projectCount: number;
+}

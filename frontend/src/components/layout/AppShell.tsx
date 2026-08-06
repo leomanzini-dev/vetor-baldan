@@ -1,6 +1,7 @@
 import { Outlet } from "react-router-dom";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
+import { AiOrb } from "@/components/ai/AiOrb";
 
 export function AppShell() {
   return (
@@ -12,6 +13,7 @@ export function AppShell() {
           <Outlet />
         </main>
       </div>
+      <AiOrb />
     </div>
   );
 }

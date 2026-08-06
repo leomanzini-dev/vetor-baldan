@@ -6,6 +6,10 @@ dist/
 .DS_Store
 .vite/
 
+# Sessão do WhatsApp (Baileys) — credenciais reais do número conectado,
+# nunca deve ir para o histórico do git nem para um repositório público.
+zapper/auth_info/
+
 # Material de referência do desafio (briefing, protótipos de layout usados
 # como inspiração de estrutura) — não faz parte do deliverable publicado.
 projeto.md

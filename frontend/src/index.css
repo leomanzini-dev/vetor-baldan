@@ -187,6 +187,26 @@ body {
   font-weight: 500;
 }
 
+@keyframes ai-title-shimmer {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* ─── AI Chat glow border ─────────────────────────────────── */
+.ai-chat-glow {
+  border: 1px solid rgba(203, 10, 38, 0.25);
+  animation: ai-glow-pulse 3s ease-in-out infinite;
+}
+
+@keyframes ai-glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(203, 10, 38, 0.1), 0 0 40px rgba(203, 10, 38, 0.05), 0 20px 60px rgba(0, 0, 0, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(203, 10, 38, 0.2), 0 0 60px rgba(203, 10, 38, 0.1), 0 20px 60px rgba(0, 0, 0, 0.3);
+  }
+}
+
 .shadow-token-sm {
   box-shadow: var(--shadow-sm);
 }

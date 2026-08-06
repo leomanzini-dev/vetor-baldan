@@ -5,4 +5,5 @@ export const executionRouter = Router();
 
 executionRouter.get("/execution/projects", executionController.getExecutingProjects);
 executionRouter.get("/execution/capacity", executionController.getCapacitySummary);
+executionRouter.get("/execution/scurve-portfolio", executionController.getPortfolioScurve);
 executionRouter.get("/execution/:projectId", executionController.getExecutionDetail);

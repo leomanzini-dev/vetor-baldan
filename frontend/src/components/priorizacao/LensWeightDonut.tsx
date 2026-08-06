@@ -1,7 +1,7 @@
-import { useMemo } from "react";
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
+import { useMemo, useState } from "react";
+import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { useThemeStore } from "@/store/themeStore";
-import { chartChrome, lensSlotColor, pickThemed } from "@/config/chartPalette";
+import { lensSlotColor, pickThemed } from "@/config/chartPalette";
 import type { LensDef } from "@/config/lenses";
 
 interface Slice {
@@ -21,6 +21,7 @@ const MAX_SLICES = 8;
 
 export function LensWeightDonut({ lenses, weights }: Props) {
   const mode = useThemeStore((s) => s.mode);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   const { slices, total } = useMemo(() => {
     const withValues: Slice[] = lenses
@@ -48,77 +49,86 @@ export function LensWeightDonut({ lenses, weights }: Props) {
 
   if (slices.length === 0) {
     return (
-      <div className="flex h-[190px] items-center justify-center text-center text-[12.5px] text-text-tertiary">
+      <div className="flex h-[170px] items-center justify-center text-center text-[12.5px] text-text-tertiary">
         Nenhum peso configurado ainda.
       </div>
     );
   }
 
+  const hovered = hoveredId ? slices.find((s) => s.id === hoveredId) : null;
+
   return (
-    <div className="flex flex-col gap-4">
-      <div className="relative">
-        <ResponsiveContainer width="100%" height={190}>
+    <div className="flex flex-col items-center gap-5 sm:flex-row">
+      <div className="relative shrink-0">
+        <ResponsiveContainer width={170} height={170}>
           <PieChart>
             <Pie
               data={slices}
               dataKey="value"
               nameKey="name"
-              innerRadius="62%"
-              outerRadius="92%"
+              innerRadius={54}
+              outerRadius={80}
               paddingAngle={2}
               stroke={pickThemed(mode, { light: "#FFFFFF", dark: "#1D1B15" })}
               strokeWidth={2}
               isAnimationActive
               animationDuration={420}
+              onMouseEnter={(_, index) => setHoveredId(slices[index].id)}
+              onMouseLeave={() => setHoveredId(null)}
             >
               {slices.map((s) => (
-                <Cell key={s.id} fill={lensSlotColor(s.colorIndex, mode)} />
+                <Cell
+                  key={s.id}
+                  fill={lensSlotColor(s.colorIndex, mode)}
+                  fillOpacity={!hoveredId || hoveredId === s.id ? 1 : 0.35}
+                  className="cursor-pointer transition-opacity"
+                />
               ))}
             </Pie>
-            <Tooltip content={<DonutTooltip mode={mode} total={total} />} />
           </PieChart>
         </ResponsiveContainer>
-        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-          <span className="font-mono text-[22px] font-bold leading-none text-text">{total}%</span>
-          <span className="mt-1 text-center text-[9.5px] font-bold uppercase leading-tight tracking-wide text-text-tertiary">
-            peso
-            <br />
-            configurado
-          </span>
+        {/* Rótulo central estático — nunca um tooltip flutuante, que numa rosca
+            pequena sempre acaba caindo em cima desse mesmo rótulo. O hover
+            troca o conteúdo do próprio rótulo em vez de abrir algo novo. */}
+        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-3 text-center">
+          {hovered ? (
+            <>
+              <span className="font-mono text-[20px] font-bold leading-none text-text">{hovered.value}%</span>
+              <span className="mt-1 line-clamp-2 text-[9.5px] font-bold uppercase leading-tight tracking-wide text-text-tertiary">
+                {hovered.short}
+              </span>
+            </>
+          ) : (
+            <>
+              <span className="font-mono text-[22px] font-bold leading-none text-text">{total}%</span>
+              <span className="mt-1 text-[9.5px] font-bold uppercase leading-tight tracking-wide text-text-tertiary">
+                peso
+                <br />
+                configurado
+              </span>
+            </>
+          )}
         </div>
       </div>
 
-      <ul className="flex flex-col gap-1.5">
+      <ul className="grid flex-1 grid-cols-1 gap-x-4 gap-y-1.5 sm:grid-cols-2">
         {slices.map((s) => (
-          <li key={s.id} className="flex items-center gap-2 text-[12px]">
+          <li
+            key={s.id}
+            onMouseEnter={() => setHoveredId(s.id)}
+            onMouseLeave={() => setHoveredId(null)}
+            className={`flex cursor-default items-center gap-2 rounded-md px-1 py-0.5 text-[12px] transition-colors ${
+              hoveredId === s.id ? "bg-app-alt" : ""
+            }`}
+          >
             <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: lensSlotColor(s.colorIndex, mode) }} />
-            <span className="min-w-0 flex-1 truncate text-text-secondary">{s.short}</span>
+            <span className={`min-w-0 flex-1 truncate ${hoveredId === s.id ? "font-semibold text-text" : "text-text-secondary"}`}>
+              {s.short}
+            </span>
             <span className="shrink-0 font-mono font-semibold text-text">{s.value}%</span>
           </li>
         ))}
       </ul>
-    </div>
-  );
-}
-
-interface TooltipPayload {
-  name: string;
-  value: number;
-}
-
-function DonutTooltip({ active, payload, mode, total }: { active?: boolean; payload?: { payload: TooltipPayload }[]; mode: "light" | "dark"; total: number }) {
-  if (!active || !payload?.length) return null;
-  const item = payload[0].payload;
-  const share = total > 0 ? Math.round((item.value / total) * 100) : 0;
-  return (
-    <div
-      className="rounded-md px-3 py-2 text-[12px] shadow-token-md"
-      style={{ background: pickThemed(mode, chartChrome.tooltipBg), border: `1px solid ${pickThemed(mode, chartChrome.tooltipBorder)}` }}
-    >
-      <p className="font-semibold text-text">{item.name}</p>
-      <p className="font-mono text-text-secondary">
-        {item.value}% de peso · {share}% da soma total
-      </p>
     </div>
   );
 }

@@ -2,10 +2,10 @@
   "name": "vetor-backend",
   "version": "1.0.0",
   "private": true,
-  "description": "VETOR — API mock de governança de portfólio de inovação (Baldan). Dados 100% em memória, sem persistência real.",
+  "description": "VETOR — API mock de governança de portfólio de inovação (Baldan).",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
+    "dev": "node --env-file=../.env --import tsx src/server.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit"

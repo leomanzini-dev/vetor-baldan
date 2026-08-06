@@ -4,6 +4,7 @@ import type {
   Person,
   PlatformParameters,
   PortfolioHighlights,
+  PortfolioScurve,
   PortfolioSummary,
   Project,
   ProjectExecutionDetail,
@@ -80,4 +81,5 @@ export const api = {
   getExecutingProjects: () => getJson<Project[]>("/execution-projects.json"),
   getExecutionDetail: (projectId: string) => getJson<ProjectExecutionDetail>(`/execution/${projectId}.json`),
   getCapacitySummary: () => getJson<CapacityResponse>("/execution-capacity.json"),
+  getPortfolioScurve: () => getJson<PortfolioScurve>("/execution-scurve.json"),
 };
