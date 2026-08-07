@@ -156,14 +156,39 @@ const typeWeights: Record<ProjectTypeId, number> = {
   "parceria-externa": 10,
 };
 
-const funnelWeights: Record<FunnelStageId, number> = {
+// "Execução" fica de fora do sorteio ponderado — um time real não sustenta
+// dezenas de projetos em execução simultânea, então o número de projetos
+// executando é fixado (EXECUTION_COUNT) e sorteado à parte; o restante do
+// portfólio se distribui pelos demais estágios do funil com estes pesos.
+const nonExecutionFunnelWeights: Record<Exclude<FunnelStageId, "execucao">, number> = {
   captacao: 22,
   triagem: 18,
   avaliacao: 16,
   gate: 10,
-  execucao: 26,
   encerrado: 8,
 };
+
+const EXECUTION_COUNT = 5;
+
+// Perfis de risco deliberados para os projetos fixados em execução — uma
+// amostra puramente aleatória tende a repetir o mesmo tipo de problema (ex.:
+// todos com CPI baixo), o que não ilustra bem a Análise de Projetos. Cada um
+// dos 5 usa um arquétipo diferente: atraso de cronograma, estouro de custo,
+// atenção leve nos dois índices, TRL estagnado frente ao prazo, e saudável.
+interface ExecutionArchetype {
+  spi: number;
+  cpi: number;
+  trl: number;
+  progressFactor: number;
+}
+
+const executionArchetypes: ExecutionArchetype[] = [
+  { spi: 0.72, cpi: 0.95, trl: 6, progressFactor: 0.55 },
+  { spi: 0.96, cpi: 0.7, trl: 6, progressFactor: 0.6 },
+  { spi: 0.9, cpi: 0.92, trl: 5, progressFactor: 0.45 },
+  { spi: 0.94, cpi: 0.93, trl: 3, progressFactor: 0.7 },
+  { spi: 1.05, cpi: 1.02, trl: 7, progressFactor: 0.5 },
+];
 
 function buildName(vertical: VerticalId, type: ProjectTypeId): string {
   const meta = verticalMeta[vertical];
@@ -275,19 +300,35 @@ export function generateProjects(count = 180): Project[] {
 
   const projects: Project[] = [];
 
+  const executionIndices = new Set<number>();
+  while (executionIndices.size < Math.min(EXECUTION_COUNT, count)) {
+    executionIndices.add(Math.floor(rand() * count));
+  }
+  let executionSlot = 0;
+
   for (let i = 0; i < count; i++) {
     const vertical = verticalIds[i % verticalIds.length];
     counters[vertical] += 1;
     const type = pickWeighted(typeWeights);
-    const funnelStage = pickWeighted(funnelWeights);
-    const trl = trlForStage(funnelStage);
+    const funnelStage: FunnelStageId = executionIndices.has(i) ? "execucao" : pickWeighted(nonExecutionFunnelWeights);
+    let trl = trlForStage(funnelStage);
 
     const isExecuting = funnelStage === "execucao" || funnelStage === "encerrado";
-    const spi = isExecuting ? randFloat(0.75, 1.15, 2) : null;
-    const cpi = isExecuting ? randFloat(0.75, 1.15, 2) : null;
+    let spi = isExecuting ? randFloat(0.75, 1.15, 2) : null;
+    let cpi = isExecuting ? randFloat(0.75, 1.15, 2) : null;
 
     const budgetK = randInt(120, 4200);
-    const progressFactor = funnelStage === "encerrado" ? 1 : funnelStage === "execucao" ? randFloat(0.15, 0.9, 2) : 0;
+    let progressFactor = funnelStage === "encerrado" ? 1 : funnelStage === "execucao" ? randFloat(0.15, 0.9, 2) : 0;
+
+    if (funnelStage === "execucao") {
+      const archetype = executionArchetypes[executionSlot % executionArchetypes.length];
+      executionSlot += 1;
+      spi = archetype.spi;
+      cpi = archetype.cpi;
+      trl = archetype.trl;
+      progressFactor = archetype.progressFactor;
+    }
+
     const spentK = Math.round(budgetK * progressFactor * (cpi ? 1 / cpi : 1));
 
     const riskBias = 9 - trl; // TRL mais baixo => mais risco tecnológico

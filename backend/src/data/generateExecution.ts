@@ -7,10 +7,8 @@ import type {
   ProjectExecutionDetail,
   SCurvePoint,
   StatusReport,
-  Stage,
-  StageStatus,
 } from "../types/domain.js";
-import { phaseNamesByType, stageNamePool, microStageNamePool } from "./flowTemplates.js";
+import { microStageNamePool } from "./flowTemplates.js";
 import { people } from "./people.js";
 import { platformParameters } from "./parameters.js";
 
@@ -51,82 +49,85 @@ export function timeProgressFraction(project: Project, now: Date): number {
 }
 
 const executors = people.filter((p) => p.profile === "executor");
+const TRL_LEVELS = 9;
+const MS_PER_DAY = 86_400_000;
 
-function buildStructure(project: Project, now: Date, rand: () => number): { phases: Phase[]; stages: Stage[]; microStages: MicroStage[] } {
-  const phaseNames = phaseNamesByType[project.type];
-  const timeProgress = project.funnelStage === "encerrado" ? 1 : timeProgressFraction(project, now);
-
+// Estrutura de execução ancorada no TRL atual do projeto (project.trl), não
+// no tempo de calendário: níveis abaixo do atual já foram concluídos
+// (histórico, distribuído nos meses anteriores para alimentar a tendência
+// mensal); o nível atual está em andamento (micro-etapas espalhadas pelo mês
+// corrente, mistura de concluída/em-andamento/pendente); níveis futuros ainda
+// não têm micro-etapas — cabe ao gestor criá-las em Parametrização quando o
+// projeto chegar lá.
+function buildStructure(project: Project, now: Date, rand: () => number): { phases: Phase[]; microStages: MicroStage[] } {
+  const currentTrl = Math.min(Math.max(Math.round(project.trl), 1), TRL_LEVELS);
   const phases: Phase[] = [];
-  const stages: Stage[] = [];
   const microStages: MicroStage[] = [];
-
-  let stagePoolIdx = randInt(rand, 0, stageNamePool.length - 1);
-  let microPoolIdx = randInt(rand, 0, microStageNamePool.length - 1);
   const vertical = executors.filter((p) => p.vertical === project.vertical || p.vertical === null);
+  const pool = vertical.length > 0 ? vertical : executors;
+  // Um projeto tem, por padrão, UM responsável (todas as micro-etapas geradas
+  // caem na mesma pessoa) — só passa a ter mais de um se o gestor atribuir
+  // manualmente uma micro-etapa extra a outra pessoa em Parametrização.
+  const projectAssignee = pick(rand, pool);
 
-  phaseNames.forEach((phaseName, phaseIdx) => {
-    const phaseId = `${project.id}-ph${phaseIdx + 1}`;
-    const phaseFractionStart = phaseIdx / phaseNames.length;
-    const phaseFractionEnd = (phaseIdx + 1) / phaseNames.length;
+  for (let level = 1; level <= TRL_LEVELS; level++) {
+    const phaseId = `${project.id}-trl${level}`;
+    const phaseStatus: PhaseStatus =
+      level < currentTrl ? "concluida" : level === currentTrl ? (currentTrl >= TRL_LEVELS ? "concluida" : "em-andamento") : "pendente";
 
-    let phaseStatus: PhaseStatus;
-    if (timeProgress >= phaseFractionEnd) phaseStatus = "concluida";
-    else if (timeProgress > phaseFractionStart) phaseStatus = "em-andamento";
-    else phaseStatus = "pendente";
+    phases.push({ id: phaseId, projectId: project.id, trlLevel: level, name: `TRL ${level}`, status: phaseStatus });
 
-    phases.push({ id: phaseId, projectId: project.id, name: phaseName, order: phaseIdx + 1, status: phaseStatus });
+    if (level > currentTrl) continue; // nível futuro — sem micro-etapas ainda
 
-    const stageCount = randInt(rand, 2, 3);
-    for (let s = 0; s < stageCount; s++) {
-      const stageId = `${phaseId}-st${s + 1}`;
-      const stageName = stageNamePool[stagePoolIdx % stageNamePool.length];
-      stagePoolIdx++;
+    const microCount = randInt(rand, 3, 6);
+    const monthsBack = currentTrl - level;
 
-      const stageFractionStart = phaseFractionStart + (s / stageCount) * (phaseFractionEnd - phaseFractionStart);
-      const stageFractionEnd = phaseFractionStart + ((s + 1) / stageCount) * (phaseFractionEnd - phaseFractionStart);
+    for (let m = 0; m < microCount; m++) {
+      const microId = `${phaseId}-mc${m + 1}`;
+      const microName = pick(rand, microStageNamePool);
+      const hours = randInt(rand, 2, 16);
 
-      let stageStatus: StageStatus;
-      if (timeProgress >= stageFractionEnd) stageStatus = "concluida";
-      else if (timeProgress > stageFractionStart) stageStatus = "em-andamento";
-      else stageStatus = "pendente";
+      let dueDate: Date;
+      let status: MicroStageStatus;
+      let completedDate: string | null;
 
-      stages.push({ id: stageId, phaseId, projectId: project.id, name: stageName, order: s + 1, status: stageStatus });
-
-      const microCount = randInt(rand, 3, 5);
-      for (let m = 0; m < microCount; m++) {
-        const microId = `${stageId}-mc${m + 1}`;
-        const microName = microStageNamePool[microPoolIdx % microStageNamePool.length];
-        microPoolIdx++;
-
-        const microFraction = stageFractionStart + ((m + 0.5) / microCount) * (stageFractionEnd - stageFractionStart);
-        let status: MicroStageStatus;
-        if (timeProgress >= microFraction) status = "concluida";
-        else if (stageStatus === "em-andamento" && rand() < 0.3) status = "em-andamento";
-        else status = "pendente";
-
-        const hours = randInt(rand, 2, 16);
-        const startMs = new Date(project.startDate).getTime();
-        const endMs = new Date(project.targetDate).getTime();
-        const dueDate = new Date(startMs + microFraction * (endMs - startMs));
-        const completedDate = status === "concluida" ? dueDate : null;
-
-        microStages.push({
-          id: microId,
-          stageId,
-          projectId: project.id,
-          name: microName,
-          hours,
-          points: hours * platformParameters.pointsPerHour,
-          status,
-          assigneeId: vertical.length > 0 ? pick(rand, vertical).id : pick(rand, executors).id,
-          dueDate: toISODate(dueDate),
-          completedDate: completedDate ? toISODate(completedDate) : null,
-        });
+      if (level < currentTrl) {
+        // nível já concluído no passado — distribui em torno de N meses atrás,
+        // alimentando a tendência mensal de execução com histórico real
+        const base = addMonths(now, -monthsBack);
+        const jitterDays = randInt(rand, -10, 10);
+        dueDate = new Date(base.getTime() + jitterDays * MS_PER_DAY);
+        status = "concluida";
+        completedDate = toISODate(dueDate);
+      } else {
+        // nível corrente — espalhado pelo mês em curso, mistura realista de status
+        const dayOffset = randInt(rand, -12, 18);
+        dueDate = new Date(now.getTime() + dayOffset * MS_PER_DAY);
+        const isPast = dueDate.getTime() <= now.getTime();
+        if (isPast) {
+          status = rand() < 0.75 ? "concluida" : "em-andamento";
+        } else {
+          status = rand() < 0.25 ? "em-andamento" : "pendente";
+        }
+        completedDate = status === "concluida" ? toISODate(dueDate) : null;
       }
-    }
-  });
 
-  return { phases, stages, microStages };
+      microStages.push({
+        id: microId,
+        phaseId,
+        projectId: project.id,
+        name: microName,
+        hours,
+        points: hours * platformParameters.pointsPerHour,
+        status,
+        assigneeId: projectAssignee.id,
+        dueDate: toISODate(dueDate),
+        completedDate,
+      });
+    }
+  }
+
+  return { phases, microStages };
 }
 
 function monthsBetween(project: Project): number {
@@ -223,11 +224,11 @@ export function generateExecutionDetails(projects: Project[]): Map<string, Proje
 
   relevant.forEach((project, idx) => {
     const rand = mulberry32(1_000_003 * (idx + 7));
-    const { phases, stages, microStages } = buildStructure(project, now, rand);
+    const { phases, microStages } = buildStructure(project, now, rand);
     const scurve = buildSCurve(project, now, rand);
     const statusReport = buildStatusReport(project, now, rand);
 
-    map.set(project.id, { projectId: project.id, phases, stages, microStages, scurve, statusReport });
+    map.set(project.id, { projectId: project.id, phases, microStages, scurve, statusReport });
   });
 
   return map;

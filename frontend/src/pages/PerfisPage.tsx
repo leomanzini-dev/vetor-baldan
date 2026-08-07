@@ -76,7 +76,7 @@ export function PerfisPage() {
               </div>
               {profile === "executor" && (
                 <Link
-                  to="/colaborador"
+                  to="/campo"
                   className="flex items-center justify-center gap-1.5 rounded-btn border border-primary-soft bg-primary-soft py-2 text-[12px] font-bold text-primary transition-colors hover:bg-primary-soft/70"
                 >
                   <Smartphone className="h-3.5 w-3.5" />

@@ -123,6 +123,8 @@ export function DashboardPage() {
         </div>
       </div>
 
+      <AiBriefingCard />
+
       <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-5">
         <KpiCard label="VPL do Portfólio" value={summary ? formatCurrencyK(summary.totalVplK) : "—"} icon={TrendingUp} />
         <KpiCard label="TIR Média" value={summary ? formatPercent(summary.avgTir) : "—"} icon={Target} />
@@ -157,7 +159,7 @@ export function DashboardPage() {
 
       {scurve && <PortfolioSCurveChart data={scurve} />}
 
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(420px,1fr))] gap-5">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-5">
         <Panel title="Perfil Estratégico do Portfólio" subtitle="Média das 8 lentes de priorização em todos os projetos ativos">
           {lensData.length > 0 && <LensProfileChart data={lensData} />}
         </Panel>
@@ -167,13 +169,9 @@ export function DashboardPage() {
         </Panel>
       </div>
 
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(420px,1fr))] gap-5">
-        <Panel title="Sinalizações da IA" subtitle="Riscos e oportunidades identificados no portfólio">
-          <AiInsightsPanel signals={signals} />
-        </Panel>
-
-        <AiBriefingCard />
-      </div>
+      <Panel title="Sinalizações da IA" subtitle="Riscos e oportunidades identificados no portfólio">
+        <AiInsightsPanel signals={signals} />
+      </Panel>
     </div>
   );
 }

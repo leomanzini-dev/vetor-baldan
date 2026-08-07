@@ -45,10 +45,4 @@ export const summaryCatalog: SummaryEntry[] = [
     description: "Os 29 membros do time: diretoria, PMO, gestores de área, controladoria e executores, com carga horária e vertical.",
     keywords: ["equipe", "pessoa", "time", "executor", "pmo", "diretoria", "quem", "responsavel", "lider"],
   },
-  {
-    id: "SEGURANCA",
-    label: "Security Guard",
-    description: "Eventos de segurança mocados: acessos USER (autenticados), BOT (sem sessão) e SSH_TRY (tentativas SSH), contadores e log.",
-    keywords: ["seguranca", "security", "guard", "bot", "ssh", "acesso", "evento", "bloqueado"],
-  },
 ];

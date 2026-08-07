@@ -22,4 +22,8 @@ export const executionController = {
   getPortfolioScurve(_req: Request, res: Response) {
     res.json(executionService.getPortfolioScurve());
   },
+
+  getMonthlyTrend(_req: Request, res: Response) {
+    res.json(executionService.getMonthlyTrend());
+  },
 };

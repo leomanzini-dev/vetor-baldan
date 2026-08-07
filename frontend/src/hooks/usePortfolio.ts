@@ -52,3 +52,7 @@ export function useCapacitySummary() {
 export function usePortfolioScurve() {
   return useQuery({ queryKey: ["portfolio-scurve"], queryFn: api.getPortfolioScurve });
 }
+
+export function useMonthlyTrend() {
+  return useQuery({ queryKey: ["monthly-trend"], queryFn: api.getMonthlyTrend });
+}

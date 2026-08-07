@@ -2,7 +2,13 @@ import { generateExecutionDetails, sCurve, timeProgressFraction } from "../data/
 import { people } from "../data/people.js";
 import { platformParameters } from "../data/parameters.js";
 import { portfolioService } from "./portfolioService.js";
-import type { CapacitySummary, MicroStage, PortfolioScurve, PortfolioScurvePoint } from "../types/domain.js";
+import type {
+  CapacitySummary,
+  MicroStage,
+  MonthlyExecutionTrendPoint,
+  PortfolioScurve,
+  PortfolioScurvePoint,
+} from "../types/domain.js";
 
 const { items: allProjects } = portfolioService.getProjects({});
 const executionDetails = generateExecutionDetails(allProjects);
@@ -57,6 +63,29 @@ export const executionService = {
 
   getCurrentMonthKey() {
     return currentMonthKey;
+  },
+
+  // Ritmo mensal de execução do portfólio: para cada um dos últimos 6 meses
+  // (até o atual), soma os pontos das micro-etapas com vencimento naquele mês
+  // e quantos desses pontos já foram efetivamente concluídos. Dá ao gestor uma
+  // leitura de tendência (acelerando/desacelerando) independente do S-curve
+  // por projeto, que é normalizado por prazo e não por calendário.
+  getMonthlyTrend(): MonthlyExecutionTrendPoint[] {
+    const allMicroStages = this.getAllMicroStages();
+
+    const months: string[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
+    }
+
+    return months.map((month) => {
+      const due = allMicroStages.filter((m) => m.dueDate.slice(0, 7) === month);
+      const pointsPlanned = due.reduce((sum, m) => sum + m.points, 0);
+      const pointsCompleted = due.filter((m) => m.status === "concluida").reduce((sum, m) => sum + m.points, 0);
+      const completionRatePct = pointsPlanned > 0 ? round1((pointsCompleted / pointsPlanned) * 100) : 0;
+      return { month, pointsPlanned, pointsCompleted, completionRatePct };
+    });
   },
 
   // Curva-S agregada: baseline planejado é a mesma curva logística normalizada

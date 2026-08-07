@@ -1,16 +1,20 @@
-import { useMemo, useState, type ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
-import { Bell, LayoutGrid, Sparkles, User, ArrowLeft, ChevronRight } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { Sparkles, TrendingUp, TrendingDown, Send, X, Ban, Smartphone, ArrowRight } from "lucide-react";
 import { usePersonaStore } from "@/store/personaStore";
-import { usePeople, useProjects, useCapacitySummary } from "@/hooks/usePortfolio";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { usePeople, useProjects } from "@/hooks/usePortfolio";
+import { useMergedCapacitySummary } from "@/hooks/useExecutionData";
+import { useMicroStagesStore } from "@/store/microStagesStore";
+import { useResourceRequestsStore } from "@/store/resourceRequestsStore";
 import { TaskCard } from "@/components/colaborador/TaskCard";
+import { Panel } from "@/components/ui/Panel";
+import { VerticalBadge } from "@/components/ui/Badge";
 import { profileLabels } from "@/config/profiles";
 import { parseLocalDate } from "@/lib/format";
+import { expectedPointsToDate, paceStatus } from "@/lib/executionPace";
 import type { MicroStageStatus } from "@/types/domain";
 
 type FilterId = "todas" | "pendente" | "em-andamento" | "concluida";
-type TabId = "tarefas" | "pontos" | "perfil";
 
 const filters: { id: FilterId; label: string }[] = [
   { id: "todas", label: "Todas" },
@@ -18,21 +22,6 @@ const filters: { id: FilterId; label: string }[] = [
   { id: "em-andamento", label: "Em andamento" },
   { id: "concluida", label: "Concluída" },
 ];
-
-// Card "frame de celular" — cabeçalho e rodapé ficam FORA da área com scroll
-// (flex-1 + overflow-y-auto), então nunca se movem com o conteúdo. Usar
-// position:absolute/fixed para o rodapé dentro de um container com overflow
-// gruda no fim do CONTEÚDO TOTAL, não no fim da área visível — por isso
-// evitamos essa abordagem aqui.
-function PhoneFrame({ children }: { children: ReactNode }) {
-  return (
-    <div className="min-h-screen bg-app-alt sm:flex sm:items-center sm:justify-center sm:p-8">
-      <div className="relative mx-auto flex h-dvh w-full flex-col bg-app sm:h-[820px] sm:max-w-[440px] sm:overflow-hidden sm:rounded-[32px] sm:border sm:border-border sm:shadow-token-lg">
-        {children}
-      </div>
-    </div>
-  );
-}
 
 function startOfToday(): number {
   const d = new Date();
@@ -52,18 +41,112 @@ function getGreeting(hour: number): string {
   return "Boa noite";
 }
 
+function RequestHelpModal({
+  projectName,
+  onClose,
+  onSubmit,
+}: {
+  projectName: string;
+  onClose: () => void;
+  onSubmit: (message: string) => void;
+}) {
+  const [message, setMessage] = useState("");
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4" onClick={onClose}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-md rounded-card border border-border bg-surface p-5 shadow-token-lg"
+      >
+        <div className="mb-3 flex items-start justify-between gap-3">
+          <div>
+            <p className="text-[15px] font-bold text-text">Solicitar reforço</p>
+            <p className="mt-0.5 text-[12px] text-text-tertiary">{projectName}</p>
+          </div>
+          <button onClick={onClose} aria-label="Fechar" className="text-text-tertiary hover:text-text">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <textarea
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder="Explique por que precisa de mais pessoas nesse projeto (ex.: carga de horas acima da capacidade do mês)…"
+          rows={4}
+          className="w-full resize-none rounded-md border border-border bg-app-alt/40 px-3 py-2.5 text-[13px] text-text"
+        />
+        <button
+          onClick={() => message.trim() && onSubmit(message.trim())}
+          disabled={!message.trim()}
+          className="mt-3 flex w-full items-center justify-center gap-2 rounded-btn bg-primary py-2.5 text-[13px] font-bold text-on-primary transition-colors hover:bg-primary-hover disabled:opacity-50"
+        >
+          <Send className="h-4 w-4" />
+          Enviar solicitação ao gestor
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ImpedimentModal({
+  taskName,
+  onClose,
+  onSubmit,
+}: {
+  taskName: string;
+  onClose: () => void;
+  onSubmit: (reason: string) => void;
+}) {
+  const [reason, setReason] = useState("");
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4" onClick={onClose}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-md rounded-card border border-border bg-surface p-5 shadow-token-lg"
+      >
+        <div className="mb-3 flex items-start justify-between gap-3">
+          <div>
+            <p className="text-[15px] font-bold text-text">Relatar impedimento</p>
+            <p className="mt-0.5 text-[12px] text-text-tertiary">{taskName}</p>
+          </div>
+          <button onClick={onClose} aria-label="Fechar" className="text-text-tertiary hover:text-text">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <textarea
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          placeholder="O que está bloqueando essa entrega? (ex.: aguardando peça de fornecedor, dependendo de outra equipe)…"
+          rows={4}
+          className="w-full resize-none rounded-md border border-border bg-app-alt/40 px-3 py-2.5 text-[13px] text-text"
+        />
+        <button
+          onClick={() => reason.trim() && onSubmit(reason.trim())}
+          disabled={!reason.trim()}
+          className="mt-3 flex w-full items-center justify-center gap-2 rounded-btn bg-danger py-2.5 text-[13px] font-bold text-white transition-colors hover:opacity-90 disabled:opacity-50"
+        >
+          <Ban className="h-4 w-4" />
+          Marcar como impedida
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function ColaboradorPage() {
-  const navigate = useNavigate();
   const activePersonId = usePersonaStore((s) => s.activePersonId);
   const setActivePerson = usePersonaStore((s) => s.setActivePerson);
 
+  const { data: capacity } = useMergedCapacitySummary();
   const { data: people } = usePeople();
   const { data: projectsData } = useProjects({ limit: 500 });
-  const { data: capacity } = useCapacitySummary();
+  const setStatus = useMicroStagesStore((s) => s.setStatus);
+  const impediments = useMicroStagesStore((s) => s.impediments);
+  const setImpediment = useMicroStagesStore((s) => s.setImpediment);
+  const clearImpediment = useMicroStagesStore((s) => s.clearImpediment);
+  const addRequest = useResourceRequestsStore((s) => s.addRequest);
 
   const [filter, setFilter] = useState<FilterId>("todas");
-  const [tab, setTab] = useState<TabId>("tarefas");
-  const [overrides, setOverrides] = useState<Record<string, MicroStageStatus>>({});
+  const [requestFor, setRequestFor] = useState<string | null>(null);
+  const [impedimentFor, setImpedimentFor] = useState<string | null>(null);
 
   const person = people?.find((p) => p.id === activePersonId);
   const executors = people?.filter((p) => p.profile === "executor") ?? [];
@@ -73,10 +156,8 @@ export function ColaboradorPage() {
 
   const tasks = useMemo(() => {
     if (!mySummary) return [];
-    return mySummary.microStages
-      .map((m) => ({ ...m, status: overrides[m.id] ?? m.status }))
-      .sort((a, b) => parseLocalDate(a.dueDate).getTime() - parseLocalDate(b.dueDate).getTime());
-  }, [mySummary, overrides]);
+    return [...mySummary.microStages].sort((a, b) => parseLocalDate(a.dueDate).getTime() - parseLocalDate(b.dueDate).getTime());
+  }, [mySummary]);
 
   const counts = {
     todas: tasks.length,
@@ -87,281 +168,207 @@ export function ColaboradorPage() {
 
   const needsActionToday = tasks.filter((t) => t.status !== "concluida" && parseLocalDate(t.dueDate).setHours(0, 0, 0, 0) <= startOfToday()).length;
 
-  const pointsEarned = tasks.filter((t) => t.status === "concluida").reduce((sum, t) => sum + t.points, 0);
+  const pointsEarned = mySummary?.pointsEarned ?? 0;
   const capacityGoal = mySummary?.monthlyCapacityPoints ?? 0;
+  const expected = expectedPointsToDate(capacityGoal);
+  const pace = paceStatus(pointsEarned, expected);
 
   const filtered = filter === "todas" ? tasks : tasks.filter((t) => t.status === filter);
+
+  const myProjects = useMemo(() => {
+    const ids = new Set(tasks.filter((t) => t.status !== "concluida").map((t) => t.projectId));
+    return Array.from(ids)
+      .map((id) => projectsById.get(id))
+      .filter((p): p is NonNullable<typeof p> => !!p);
+  }, [tasks, projectsById]);
 
   function advance(id: string) {
     const task = tasks.find((t) => t.id === id);
     if (!task) return;
-    setOverrides((prev) => ({ ...prev, [id]: nextStatus(task.status) }));
+    setStatus(id, nextStatus(task.status));
+  }
+
+  function submitRequest(message: string) {
+    if (!requestFor || !person) return;
+    addRequest({ projectId: requestFor, personId: person.id, message });
+    setRequestFor(null);
+  }
+
+  function submitImpediment(reason: string) {
+    if (!impedimentFor) return;
+    setImpediment(impedimentFor, reason);
+    setImpedimentFor(null);
   }
 
   const greeting = getGreeting(new Date().getHours());
   const firstName = person?.name.split(" ")[0] ?? "";
   const today = new Date().toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "long" }).toUpperCase();
-
   const isNotExecutor = !!person && person.profile !== "executor";
+  const requestProject = requestFor ? projectsById.get(requestFor) : undefined;
 
   if (isNotExecutor) {
     return (
-      <PhoneFrame>
-        <div className="flex flex-1 flex-col items-center justify-center gap-4 overflow-y-auto px-6 py-10 text-center">
-          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-primary">
-            <User className="h-7 w-7" />
-          </span>
-          <div>
-            <p className="text-[16px] font-bold text-text">Essa visão é para o perfil Executor</p>
-            <p className="mt-1.5 text-[13px] text-text-secondary">
-              {person?.name} está logado como {profileLabels[person!.profile]}. Escolha um colaborador para ver a
-              versão de campo:
-            </p>
-          </div>
-          <div className="flex w-full max-w-xs flex-col gap-1.5">
-            {executors.map((ex) => (
-              <button
-                key={ex.id}
-                onClick={() => setActivePerson(ex.id)}
-                className="flex items-center gap-3 rounded-xl border border-border bg-surface px-3 py-2.5 text-left transition-colors hover:border-primary/40"
-              >
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-app-alt text-[11px] font-bold text-text-secondary">
-                  {ex.avatarInitials}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[12.5px] font-semibold text-text">{ex.name}</span>
-                  <span className="block truncate text-[10.5px] text-text-tertiary">{ex.role}</span>
-                </span>
-              </button>
-            ))}
-          </div>
-          <button
-            onClick={() => navigate("/")}
-            className="mt-2 flex items-center gap-2 text-[12.5px] font-semibold text-text-tertiary hover:text-text"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Voltar para o painel executivo
-          </button>
+      <div className="flex flex-col gap-6">
+        <div>
+          <h1 className="text-[26px] font-semibold tracking-tight text-text">Minhas Tarefas</h1>
+          <p className="mt-1 text-[13px] text-text-tertiary">Visão de rotina diária do executor.</p>
         </div>
-      </PhoneFrame>
+        <Panel title="Essa visão é para o perfil Executor" subtitle={`${person?.name} está logado como ${profileLabels[person!.profile]}`}>
+          <div className="flex flex-col gap-4">
+            <p className="text-[13px] text-text-secondary">Escolha um colaborador para ver a versão de campo:</p>
+            <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+              {executors.map((ex) => (
+                <button
+                  key={ex.id}
+                  onClick={() => setActivePerson(ex.id)}
+                  className="flex items-center gap-3 rounded-xl border border-border bg-surface px-3 py-2.5 text-left transition-colors hover:border-primary/40"
+                >
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-app-alt text-[11px] font-bold text-text-secondary">
+                    {ex.avatarInitials}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[12.5px] font-semibold text-text">{ex.name}</span>
+                    <span className="block truncate text-[10.5px] text-text-tertiary">{ex.role}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </Panel>
+      </div>
     );
   }
 
   return (
-    <PhoneFrame>
-      {/* Header — fora da área com scroll, nunca se move */}
-      <header className="flex shrink-0 items-center gap-3 border-b border-border bg-surface px-[18px] py-4">
-        <button onClick={() => setTab("perfil")} className="flex min-w-0 flex-1 items-center gap-2.5 text-left">
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
           <span className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-[15px] font-bold text-on-primary">
             {person?.avatarInitials ?? "—"}
-            <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-surface bg-success" />
+            <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-app bg-success" />
           </span>
-          <span className="min-w-0">
-            <span className="block text-[12px] font-semibold text-text-tertiary">{greeting},</span>
-            <span className="block truncate text-[17px] font-bold leading-tight text-text">{firstName || "Colaborador"} 👷</span>
-          </span>
-        </button>
-        <ThemeToggle />
-        <button
-          aria-label="Notificações"
-          className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border bg-app-alt text-text"
-        >
-          <Bell className="h-5 w-5" />
-          <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full border-2 border-surface bg-danger" />
-        </button>
-      </header>
-
-      {/* Conteúdo — único elemento que rola */}
-      <div className="flex-1 overflow-y-auto">
-        {tab === "tarefas" && (
-          <>
-            {/* Today banner */}
-            <section className="px-5 pb-1.5 pt-4">
-              <p className="mb-1.5 font-mono text-[11px] font-bold uppercase tracking-widest text-text-tertiary">{today}</p>
-              <h1 className="text-[24px] font-bold leading-tight tracking-tight text-text">
-                {needsActionToday > 0 ? (
-                  <>
-                    Você tem <span className="text-primary">{needsActionToday} pendente{needsActionToday !== 1 ? "s" : ""}</span> pra hoje.
-                  </>
-                ) : (
-                  <>
-                    Nenhuma pendência <span className="text-primary">urgente</span> hoje.
-                  </>
-                )}
-              </h1>
-              <p className="mt-1.5 text-[13px] text-text-secondary">
-                {needsActionToday > 0
-                  ? "Cada entrega credita pontos na hora. Bora fechar a meta! 💪"
-                  : `Você ainda tem ${counts.pendente + counts["em-andamento"]} micro-etapas no mês. Adianta o que puder! 💪`}
-              </p>
-            </section>
-
-            {/* Stats */}
-            <section className="grid grid-cols-3 gap-2.5 px-5 pb-2 pt-4">
-              <div className="rounded-2xl border border-border bg-surface px-3 py-3.5 text-center shadow-token-sm">
-                <p className="text-[26px] font-bold leading-none text-text">{needsActionToday}</p>
-                <p className="mt-1.5 text-[10px] font-bold uppercase tracking-wide text-text-tertiary">Hoje</p>
-              </div>
-              <div className="rounded-2xl border border-border bg-surface px-3 py-3.5 text-center shadow-token-sm">
-                <p className="text-[26px] font-bold leading-none text-text">{counts.pendente + counts["em-andamento"]}</p>
-                <p className="mt-1.5 text-[10px] font-bold uppercase tracking-wide text-text-tertiary">Pendentes</p>
-              </div>
-              <div className="rounded-2xl border border-primary-soft bg-primary-soft px-3 py-3.5 text-center shadow-token-sm">
-                <p className="text-[26px] font-bold leading-none text-primary">{pointsEarned}</p>
-                <p className="mt-1.5 text-[10px] font-bold uppercase tracking-wide text-primary/70">Pontos no mês</p>
-              </div>
-            </section>
-
-            {/* Filters */}
-            <nav className="flex gap-2 overflow-x-auto px-5 pb-1.5 pt-4 [scrollbar-width:none]">
-              {filters.map((f) => (
-                <button
-                  key={f.id}
-                  onClick={() => setFilter(f.id)}
-                  className={`flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2 text-[12.5px] font-bold transition-colors ${
-                    filter === f.id ? "bg-primary text-on-primary" : "border border-border bg-surface text-text-secondary"
-                  }`}
-                >
-                  {f.label}
-                  <span
-                    className={`rounded-full px-1.5 py-0.5 font-mono text-[10px] ${
-                      filter === f.id ? "bg-black/15" : "bg-app-alt text-text-tertiary"
-                    }`}
-                  >
-                    {counts[f.id]}
-                  </span>
-                </button>
-              ))}
-            </nav>
-
-            {/* Task list */}
-            <section className="flex flex-col gap-3.5 px-5 pb-6 pt-3">
-              {filtered.map((task) => (
-                <TaskCard key={task.id} task={task} project={projectsById.get(task.projectId)} onAdvance={advance} />
-              ))}
-              {filtered.length === 0 && (
-                <div className="flex flex-col items-center gap-2 rounded-card border border-dashed border-border py-14 text-center">
-                  <Sparkles className="h-6 w-6 text-text-tertiary" />
-                  <p className="text-[13px] text-text-tertiary">Nenhuma micro-etapa nesse filtro.</p>
-                </div>
-              )}
-            </section>
-          </>
-        )}
-
-        {tab === "pontos" && mySummary && (
-          <section className="flex flex-col gap-5 px-5 py-6">
-            <div>
-              <h2 className="text-[20px] font-bold text-text">Meus pontos</h2>
-              <p className="mt-1 text-[13px] text-text-secondary">
-                Meta mensal calculada a partir das suas {person?.dailyHours}h/dia de trabalho.
-              </p>
-            </div>
-
-            <div className="rounded-card border border-primary-soft bg-primary-soft p-5 text-center">
-              <p className="font-mono text-[40px] font-bold leading-none text-primary">{pointsEarned}</p>
-              <p className="mt-2 text-[12px] font-bold uppercase tracking-wide text-primary/70">
-                de {capacityGoal} pontos no mês
-              </p>
-              <div className="mx-auto mt-4 h-2.5 w-full max-w-[240px] overflow-hidden rounded-full bg-surface">
-                <div
-                  className="h-full rounded-full bg-primary transition-all"
-                  style={{ width: `${capacityGoal > 0 ? Math.min((pointsEarned / capacityGoal) * 100, 100) : 0}%` }}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-2xl border border-border bg-surface p-4">
-                <p className="text-[22px] font-bold text-text">{counts["em-andamento"]}</p>
-                <p className="mt-1 text-[11px] font-semibold text-text-tertiary">Em andamento</p>
-              </div>
-              <div className="rounded-2xl border border-border bg-surface p-4">
-                <p className="text-[22px] font-bold text-text">{counts.concluida}</p>
-                <p className="mt-1 text-[11px] font-semibold text-text-tertiary">Concluídas no mês</p>
-              </div>
-            </div>
-
-            <p className="text-[11.5px] leading-relaxed text-text-tertiary">
-              Cada micro-etapa converte suas horas estimadas em pontos (parâmetro definido pela liderança em
-              Central de Parametrização). Ao marcar uma entrega como concluída, os pontos são creditados na hora.
+          <div>
+            <p className="text-[12px] font-semibold text-text-tertiary">
+              {greeting}, {firstName || "Colaborador"} · {today}
             </p>
-          </section>
-        )}
+            <h1 className="text-[22px] font-semibold tracking-tight text-text">Minhas Tarefas</h1>
+          </div>
+        </div>
+        <div className="flex flex-col items-end gap-1.5">
+          <Link
+            to="/campo"
+            className="flex items-center gap-1.5 rounded-btn bg-primary px-3.5 py-2 text-[12.5px] font-semibold text-on-primary transition-colors hover:bg-primary-hover"
+          >
+            <Smartphone className="h-4 w-4" />
+            Abrir VETOR Campo (mobile)
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+          <p className="text-[11.5px] text-text-tertiary">Troque de colaborador pelo seletor no topo da página</p>
+        </div>
+      </div>
 
-        {tab === "perfil" && person && (
-          <section className="flex flex-col gap-5 px-5 py-6">
-            <div className="flex items-center gap-3.5 rounded-card border border-border bg-surface p-4">
-              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary text-[18px] font-bold text-on-primary">
-                {person.avatarInitials}
-              </span>
-              <div className="min-w-0">
-                <p className="truncate text-[16px] font-bold text-text">{person.name}</p>
-                <p className="truncate text-[12.5px] text-text-secondary">{person.role}</p>
-                <p className="mt-1 text-[11px] font-bold uppercase tracking-wide text-primary">{profileLabels[person.profile]}</p>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="rounded-card border border-border bg-surface px-4 py-3.5 shadow-token-sm">
+          <p className="text-[22px] font-bold leading-none text-text">{needsActionToday}</p>
+          <p className="mt-1.5 text-[10.5px] font-bold uppercase tracking-wide text-text-tertiary">Para hoje</p>
+        </div>
+        <div className="rounded-card border border-border bg-surface px-4 py-3.5 shadow-token-sm">
+          <p className="text-[22px] font-bold leading-none text-text">{counts.pendente + counts["em-andamento"]}</p>
+          <p className="mt-1.5 text-[10.5px] font-bold uppercase tracking-wide text-text-tertiary">Pendentes no mês</p>
+        </div>
+        <div className="rounded-card border border-primary-soft bg-primary-soft px-4 py-3.5 shadow-token-sm">
+          <p className="text-[22px] font-bold leading-none text-primary">
+            {pointsEarned}
+            <span className="text-[13px] text-primary/70">/{capacityGoal}</span>
+          </p>
+          <p className="mt-1.5 text-[10.5px] font-bold uppercase tracking-wide text-primary/70">Pontos no mês</p>
+        </div>
+        <div
+          className={`rounded-card border px-4 py-3.5 shadow-token-sm ${
+            pace === "em-dia" ? "border-success-soft bg-success-soft" : "border-danger-soft bg-danger-soft"
+          }`}
+        >
+          <p className={`flex items-center gap-1.5 text-[15px] font-bold leading-none ${pace === "em-dia" ? "text-success" : "text-danger"}`}>
+            {pace === "em-dia" ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+            {pace === "em-dia" ? "Em dia" : "Atrasado"}
+          </p>
+          <p className={`mt-1.5 text-[10.5px] font-bold uppercase tracking-wide ${pace === "em-dia" ? "text-success/80" : "text-danger/80"}`}>
+            Esperado até hoje: {expected} pts
+          </p>
+        </div>
+      </div>
+
+      {myProjects.length > 0 && (
+        <Panel title="Precisa de reforço?" subtitle="Se a carga de algum projeto está acima das suas horas, avise o gestor por aqui">
+          <div className="flex flex-col gap-2">
+            {myProjects.map((project) => (
+              <div key={project.id} className="flex items-center gap-3 rounded-md border border-border px-3 py-2.5">
+                <VerticalBadge vertical={project.vertical} />
+                <p className="min-w-0 flex-1 truncate text-[12.5px] font-medium text-text">
+                  {project.code} · {project.name}
+                </p>
+                <button
+                  onClick={() => setRequestFor(project.id)}
+                  className="shrink-0 rounded-md border border-border px-2.5 py-1.5 text-[11.5px] font-bold text-text-secondary transition-colors hover:border-primary/40 hover:text-primary"
+                >
+                  Solicitar reforço
+                </button>
               </div>
-            </div>
+            ))}
+          </div>
+        </Panel>
+      )}
 
-            <div>
-              <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-text-tertiary">Trocar de colaborador</p>
-              <div className="flex flex-col gap-1.5">
-                {executors.map((ex) => (
-                  <button
-                    key={ex.id}
-                    onClick={() => setActivePerson(ex.id)}
-                    className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors ${
-                      ex.id === activePersonId ? "border-primary bg-primary-soft" : "border-border bg-surface"
-                    }`}
-                  >
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-app-alt text-[11px] font-bold text-text-secondary">
-                      {ex.avatarInitials}
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[12.5px] font-semibold text-text">{ex.name}</span>
-                      <span className="block truncate text-[10.5px] text-text-tertiary">{ex.role}</span>
-                    </span>
-                    {ex.id === activePersonId && <ChevronRight className="h-4 w-4 shrink-0 text-primary" />}
-                  </button>
-                ))}
-              </div>
-            </div>
-
+      <div>
+        <nav className="mb-3 flex gap-2 overflow-x-auto [scrollbar-width:none]">
+          {filters.map((f) => (
             <button
-              onClick={() => navigate("/")}
-              className="flex items-center justify-center gap-2 rounded-btn border border-border bg-surface py-3 text-[13px] font-bold text-text-secondary"
+              key={f.id}
+              onClick={() => setFilter(f.id)}
+              className={`flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2 text-[12.5px] font-bold transition-colors ${
+                filter === f.id ? "bg-primary text-on-primary" : "border border-border bg-surface text-text-secondary"
+              }`}
             >
-              <ArrowLeft className="h-4 w-4" />
-              Ver painel executivo completo
+              {f.label}
+              <span className={`rounded-full px-1.5 py-0.5 font-mono text-[10px] ${filter === f.id ? "bg-black/15" : "bg-app-alt text-text-tertiary"}`}>
+                {counts[f.id]}
+              </span>
             </button>
-          </section>
+          ))}
+        </nav>
+
+        <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-3">
+          {filtered.map((task) => (
+            <TaskCard
+              key={task.id}
+              task={task}
+              project={projectsById.get(task.projectId)}
+              impediment={impediments[task.id]}
+              onAdvance={advance}
+              onReportImpediment={setImpedimentFor}
+              onClearImpediment={clearImpediment}
+            />
+          ))}
+        </div>
+        {filtered.length === 0 && (
+          <div className="flex flex-col items-center gap-2 rounded-card border border-dashed border-border py-14 text-center">
+            <Sparkles className="h-6 w-6 text-text-tertiary" />
+            <p className="text-[13px] text-text-tertiary">Nenhuma micro-etapa nesse filtro.</p>
+          </div>
         )}
       </div>
 
-      {/* Bottom nav — fora da área com scroll, nunca se move */}
-      <nav className="grid shrink-0 grid-cols-3 border-t border-border bg-surface px-2 py-2">
-        {(
-          [
-            { id: "tarefas" as TabId, label: "Tarefas", icon: LayoutGrid },
-            { id: "pontos" as TabId, label: "Pontos", icon: Sparkles },
-            { id: "perfil" as TabId, label: "Perfil", icon: User },
-          ]
-        ).map((item) => {
-          const Icon = item.icon;
-          const active = tab === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => setTab(item.id)}
-              className={`flex flex-col items-center gap-1 rounded-xl py-2 text-[10.5px] font-bold transition-colors ${
-                active ? "text-primary" : "text-text-tertiary"
-              }`}
-            >
-              <Icon className="h-[22px] w-[22px]" />
-              {item.label}
-            </button>
-          );
-        })}
-      </nav>
-    </PhoneFrame>
+      {requestFor && requestProject && (
+        <RequestHelpModal projectName={`${requestProject.code} · ${requestProject.name}`} onClose={() => setRequestFor(null)} onSubmit={submitRequest} />
+      )}
+
+      {impedimentFor && (
+        <ImpedimentModal
+          taskName={tasks.find((t) => t.id === impedimentFor)?.name ?? ""}
+          onClose={() => setImpedimentFor(null)}
+          onSubmit={submitImpediment}
+        />
+      )}
+    </div>
   );
 }

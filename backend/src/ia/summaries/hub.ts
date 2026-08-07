@@ -6,7 +6,6 @@ import { buildMaturidadeSummary } from "./maturidade.js";
 import { buildExecucaoSummary } from "./execucao.js";
 import { buildProjetosSummary } from "./projetos.js";
 import { buildEquipeSummary } from "./equipe.js";
-import { buildSegurancaSummary } from "./seguranca.js";
 
 type SummaryId =
   | "VISAO_GERAL"
@@ -14,8 +13,7 @@ type SummaryId =
   | "MATURIDADE"
   | "EXECUCAO"
   | "PROJETOS"
-  | "EQUIPE"
-  | "SEGURANCA";
+  | "EQUIPE";
 
 const builders: Record<SummaryId, () => string> = {
   VISAO_GERAL: buildDashboardSummary,
@@ -24,7 +22,6 @@ const builders: Record<SummaryId, () => string> = {
   EXECUCAO: buildExecucaoSummary,
   PROJETOS: buildProjetosSummary,
   EQUIPE: buildEquipeSummary,
-  SEGURANCA: buildSegurancaSummary,
 };
 
 export function loadSummary(id: string): string {

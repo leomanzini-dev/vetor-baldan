@@ -54,6 +54,27 @@ export function trlColor(level: number, mode: "light" | "dark"): string {
   return ramp[Math.min(Math.max(level - 1, 0), 8)];
 }
 
+function hexToRgb(hex: string): [number, number, number] {
+  const n = parseInt(hex.replace("#", ""), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+function relativeLuminance([r, g, b]: [number, number, number]): number {
+  const chan = (c: number) => {
+    const s = c / 255;
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+  };
+  return 0.2126 * chan(r) + 0.7152 * chan(g) + 0.0722 * chan(b);
+}
+
+// Texto de contraste sobre a rampa de TRL — a rampa vai de clara (TRL 1) a
+// escura (TRL 9) nos dois temas, então texto branco fixo fica ilegível nos
+// níveis baixos (no tema escuro, TRL 1-2 chegam a ser quase brancos).
+export function trlTextColor(level: number, mode: "light" | "dark"): string {
+  const lum = relativeLuminance(hexToRgb(trlColor(level, mode)));
+  return lum > 0.45 ? "#141413" : "#ffffff";
+}
+
 // 3 passos da mesma rampa para as bandas de maturidade (Descoberta/Validação/Escala).
 export const trlBandColors = {
   light: [trlRampLight[0], trlRampLight[4], trlRampLight[8]],

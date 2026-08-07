@@ -1,0 +1,382 @@
+/* ════════════════════════════════════════════════════════════════
+   VETOR CAMPO — experiência mobile dedicada do executor.
+   Stylesheet escopado sob ".campo-root", importado só nesta rota —
+   a página roda fora do AppShell (sem sidebar/topbar), como um app
+   isolado. É a mesma marca Baldan em formato de app: os tokens
+   abaixo espelham os valores reais de src/index.css (mesmo vermelho
+   primário, mesmas superfícies claro/escuro), só reorganizados com
+   nomes curtos porque aqui não passamos pelo Tailwind. Fontes também
+   reaproveitam as já carregadas pelo app (Inter + JetBrains Mono) —
+   nada de fonte nova, nada de paleta nova.
+   ════════════════════════════════════════════════════════════════ */
+
+.campo-root, .campo-root [data-campo-theme="dark"] {
+  --c-font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --c-font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
+
+  --c-bg: #141413; --c-bg2: #201f1d; --c-card: #201f1d; --c-card2: #1a1917;
+  --c-border: rgba(255,255,255,0.09); --c-border2: rgba(255,255,255,0.16);
+  --c-primary: #e23a52; --c-primary-dark: #f2536a;
+  --c-primary-muted: rgba(226,58,82,0.16); --c-primary-border: rgba(226,58,82,0.32);
+  --c-on-primary: #ffffff;
+  --c-gradient: linear-gradient(135deg, var(--c-primary), var(--c-primary-dark));
+  --c-glow: 0 0 26px rgba(226,58,82,0.32);
+  --c-text: #f5ede3; --c-text2: #c9c2b4; --c-text3: #8c8578;
+  --c-success: #4caf50; --c-success-bg: rgba(76,175,80,0.16);
+  --c-danger: #e23a52; --c-danger-bg: rgba(226,58,82,0.16);
+  --c-warn: #e6a700; --c-warn-bg: rgba(230,167,0,0.16);
+  --c-info: #5b8fd1; --c-info-bg: rgba(91,143,209,0.16);
+  --c-purple: #9c85c9; --c-purple-bg: rgba(156,133,201,0.16);
+  --c-shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+  --c-shadow-md: 0 6px 18px rgba(0,0,0,0.4);
+  --c-shadow-lg: 0 20px 48px rgba(0,0,0,0.55);
+  --c-frame-bg: #0c0c0b;
+  color-scheme: dark;
+}
+.campo-root[data-campo-theme="light"] {
+  --c-bg: #f5ede3; --c-bg2: #ffffff; --c-card: #ffffff; --c-card2: #faf9f5;
+  --c-border: rgba(20,20,19,0.12); --c-border2: rgba(20,20,19,0.22);
+  --c-primary: #cb0a26; --c-primary-dark: #a80820;
+  --c-primary-muted: #fbe7ea; --c-primary-border: rgba(203,10,38,0.3);
+  --c-on-primary: #ffffff;
+  --c-gradient: linear-gradient(135deg, var(--c-primary), var(--c-primary-dark));
+  --c-glow: 0 4px 18px rgba(203,10,38,0.26);
+  --c-text: #141413; --c-text2: #4a4a4a; --c-text3: #828282;
+  --c-success: #2e7d32; --c-success-bg: rgba(46,125,50,0.12);
+  --c-danger: #cb0a26; --c-danger-bg: #fbe7ea;
+  --c-warn: #b3790a; --c-warn-bg: rgba(230,167,0,0.16);
+  --c-info: #3b6fb0; --c-info-bg: rgba(59,111,176,0.12);
+  --c-purple: #6b4e9e; --c-purple-bg: rgba(107,78,158,0.12);
+  --c-shadow-sm: 0 1px 2px rgba(20,20,19,0.06), 0 1px 3px rgba(20,20,19,0.04);
+  --c-shadow-md: 0 4px 14px rgba(20,20,19,0.08);
+  --c-shadow-lg: 0 16px 40px rgba(20,20,19,0.14);
+  --c-frame-bg: #e5ddd0;
+  color-scheme: light;
+}
+
+.campo-root {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: var(--c-frame-bg);
+  font-family: var(--c-font-sans);
+  color: var(--c-text);
+  overflow-y: auto;
+  -webkit-font-smoothing: antialiased;
+}
+.campo-root * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+/* :where() zera a especificidade de ".campo-root" — sem isso, este reset
+   (classe + elemento) ganharia de qualquer regra de componente com uma
+   única classe (ex.: .campo-fab, .campo-avatar, .campo-switch-item) e
+   apagaria o background deles, deixando os botões "vazios". */
+:where(.campo-root) button {
+  font-family: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  cursor: pointer;
+  text-align: inherit;
+}
+:where(.campo-root) button:focus-visible {
+  outline: 2px solid var(--c-primary);
+  outline-offset: 2px;
+}
+
+.campo-shell {
+  background: var(--c-bg);
+  width: 100%;
+  min-height: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 720px) {
+  .campo-root {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 40px 20px;
+    background:
+      radial-gradient(circle at 20% 25%, rgba(203,10,38,0.06), transparent 55%),
+      radial-gradient(circle at 80% 75%, rgba(203,10,38,0.04), transparent 55%),
+      var(--c-frame-bg);
+  }
+  .campo-shell {
+    max-width: 430px;
+    min-height: calc(100vh - 80px);
+    border-radius: 34px;
+    overflow: hidden;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.4), 0 0 0 8px var(--c-card), 0 0 0 9px var(--c-border);
+  }
+}
+
+/* ═══════ HEADER ═══════ */
+.campo-header {
+  background: var(--c-bg2);
+  border-bottom: 1px solid var(--c-border);
+  padding: 16px 18px 14px;
+  display: flex; align-items: center; gap: 10px;
+  position: sticky; top: 0; z-index: 30;
+}
+.campo-user { display: flex; align-items: center; gap: 11px; flex: 1; min-width: 0; }
+.campo-avatar {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: var(--c-gradient);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--c-on-primary);
+  font-weight: 700; font-size: 15px;
+  box-shadow: var(--c-glow);
+  flex-shrink: 0; position: relative; cursor: pointer; border: 0;
+}
+.campo-avatar::after {
+  content: ''; position: absolute; bottom: 0; right: 0;
+  width: 12px; height: 12px; background: var(--c-success);
+  border: 2.5px solid var(--c-bg2); border-radius: 50%;
+}
+.campo-greet { flex: 1; min-width: 0; }
+.campo-greet-hi { font-size: 12px; color: var(--c-text2); font-weight: 600; }
+.campo-greet-name {
+  font-weight: 700; font-size: 17.5px;
+  color: var(--c-text); line-height: 1.15; margin-top: 1px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.campo-icon-btn {
+  position: relative;
+  width: 42px; height: 42px;
+  background: var(--c-card); border: 1px solid var(--c-border);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--c-text); cursor: pointer; flex-shrink: 0;
+}
+.campo-icon-btn:active { transform: scale(.95); }
+.campo-icon-btn svg { width: 19px; height: 19px; }
+.campo-icon-btn.is-primary { color: var(--c-primary); }
+.campo-icon-btn .dot {
+  position: absolute; top: 8px; right: 9px;
+  width: 8px; height: 8px; background: var(--c-danger);
+  border: 2px solid var(--c-bg2); border-radius: 50%;
+}
+
+/* ═══════ TODAY ═══════ */
+.campo-today { padding: 18px 20px 4px; }
+.campo-today-date {
+  font-family: var(--c-font-mono); font-size: 10.5px; color: var(--c-text3);
+  text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px; font-weight: 600;
+}
+.campo-today-title {
+  font-weight: 700; font-size: 24px;
+  letter-spacing: -.3px; color: var(--c-text); line-height: 1.2;
+}
+.campo-today-title span { color: var(--c-primary); }
+.campo-today-sub { font-size: 13px; color: var(--c-text2); margin-top: 5px; }
+
+/* ═══════ STATS ═══════ */
+.campo-stats { padding: 16px 20px 6px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.campo-stat {
+  background: var(--c-card); border: 1px solid var(--c-border); border-radius: 14px;
+  padding: 13px 10px; text-align: center; transition: transform .15s;
+}
+.campo-stat:active { transform: scale(.97); }
+.campo-stat-num {
+  font-weight: 700; font-size: 25px; line-height: 1;
+  color: var(--c-text); margin-bottom: 4px;
+}
+.campo-stat.is-featured .campo-stat-num { color: var(--c-primary); }
+.campo-stat.is-danger .campo-stat-num { color: var(--c-danger); }
+.campo-stat-label { font-size: 10px; color: var(--c-text2); font-weight: 700; letter-spacing: .6px; text-transform: uppercase; }
+
+/* ═══════ FILTERS ═══════ */
+.campo-filters { padding: 16px 20px 4px; display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
+.campo-filters::-webkit-scrollbar { display: none; }
+.campo-chip {
+  flex-shrink: 0; padding: 8px 13px; background: var(--c-card); border: 1px solid var(--c-border);
+  color: var(--c-text2); border-radius: 999px; font-size: 12px; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; gap: 6px; transition: all .15s;
+}
+.campo-chip:active { transform: scale(.96); }
+.campo-chip.active { background: var(--c-primary); color: var(--c-on-primary); border-color: var(--c-primary); }
+.campo-chip .count {
+  background: var(--c-card2); color: var(--c-text2); padding: 1px 6px; border-radius: 999px;
+  font-size: 9.5px; font-weight: 800; font-family: var(--c-font-mono);
+}
+.campo-chip.active .count { background: rgba(0,0,0,0.18); color: inherit; }
+
+/* ═══════ LIST ═══════ */
+.campo-list { padding: 12px 20px 24px; display: flex; flex-direction: column; gap: 13px; }
+.campo-task {
+  background: var(--c-card); border: 1px solid var(--c-border); border-radius: 16px;
+  overflow: hidden; position: relative;
+  animation: campoSlideUp .35s cubic-bezier(.4,0,.2,1) both;
+}
+.campo-task::before { content: ''; position: absolute; top: 0; left: 0; bottom: 0; width: 4px; }
+.campo-task.tone-danger::before { background: var(--c-danger); }
+.campo-task.tone-warn::before { background: var(--c-warn); }
+.campo-task.tone-info::before { background: var(--c-info); }
+.campo-task.tone-success::before { background: var(--c-success); }
+.campo-task.tone-neutral::before { background: var(--c-border2); }
+.campo-task.is-done { opacity: .68; }
+
+.campo-task-head { padding: 13px 15px 9px 17px; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.campo-task-title { font-weight: 700; font-size: 15.5px; color: var(--c-text); line-height: 1.25; margin-bottom: 3px; }
+.campo-task-id { font-family: var(--c-font-mono); font-size: 10px; color: var(--c-text3); letter-spacing: .5px; font-weight: 600; }
+.campo-status {
+  display: inline-flex; align-items: center; gap: 4px; padding: 5px 9px; border-radius: 8px;
+  font-size: 10px; font-weight: 700; letter-spacing: .8px;
+  text-transform: uppercase; flex-shrink: 0;
+}
+.campo-status.tone-danger { background: var(--c-danger-bg); color: var(--c-danger); }
+.campo-status.tone-warn { background: var(--c-warn-bg); color: var(--c-warn); }
+.campo-status.tone-info { background: var(--c-info-bg); color: var(--c-info); }
+.campo-status.tone-success { background: var(--c-success-bg); color: var(--c-success); }
+.campo-status.tone-neutral { background: var(--c-card2); color: var(--c-text); border: 1px solid var(--c-border2); }
+.campo-status .pulse { width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: campoPulse 1.5s infinite; }
+
+.campo-task-body { padding: 0 15px 12px 17px; display: flex; flex-direction: column; gap: 2px; }
+.campo-row { display: flex; align-items: center; gap: 9px; padding: 5px 0; color: var(--c-text2); font-size: 12.5px; line-height: 1.4; }
+.campo-row svg { width: 14px; height: 14px; color: var(--c-text3); flex-shrink: 0; }
+.campo-row .v { color: var(--c-text); font-weight: 700; }
+.campo-row.is-urgent { color: var(--c-danger); font-weight: 700; }
+.campo-row.is-urgent svg { color: var(--c-danger); }
+
+.campo-impediment {
+  margin: 2px 15px 10px 17px; display: flex; align-items: flex-start; gap: 8px;
+  border: 1px solid var(--c-danger-bg); background: var(--c-danger-bg); border-radius: 10px;
+  padding: 9px 10px; color: var(--c-danger); font-size: 12px; line-height: 1.4;
+}
+.campo-impediment svg { width: 15px; height: 15px; flex-shrink: 0; margin-top: 1px; }
+.campo-impediment button { flex-shrink: 0; color: inherit; opacity: .7; }
+
+.campo-actions { padding: 11px 15px 15px 17px; display: flex; gap: 9px; border-top: 1px dashed var(--c-border); margin-top: 4px; }
+.campo-btn {
+  flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 12px 13px; border-radius: 11px; font-weight: 700; font-size: 13px; border: 0;
+  cursor: pointer; min-height: 46px; transition: transform .15s;
+}
+.campo-btn:active { transform: scale(.96); }
+.campo-btn svg { width: 16px; height: 16px; }
+.campo-btn.is-primary { background: var(--c-gradient); color: var(--c-on-primary); box-shadow: 0 4px 12px rgba(203,10,38,0.28); }
+.campo-btn.is-success { background: var(--c-success); color: white; box-shadow: 0 4px 12px rgba(46,125,50,0.28); }
+.campo-btn.is-ghost { background: transparent; color: var(--c-text2); border: 1px solid var(--c-border); flex: 0 0 46px; padding: 12px; }
+.campo-btn.is-secondary { background: var(--c-card2); color: var(--c-text); border: 1px solid var(--c-border); }
+
+.campo-empty {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 48px 20px; text-align: center; color: var(--c-text3);
+}
+.campo-empty svg { width: 26px; height: 26px; }
+.campo-empty p { font-size: 13px; }
+
+/* ═══════ FAB ═══════ */
+.campo-fab {
+  position: fixed; bottom: 88px; right: 20px; z-index: 25;
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 13px 18px 13px 14px; background: var(--c-gradient); color: var(--c-on-primary);
+  border: 0; border-radius: 999px; font-weight: 800; font-size: 13px; cursor: pointer;
+  box-shadow: 0 8px 24px rgba(203,10,38,0.35); animation: campoFloatIn .5s .3s both;
+}
+.campo-fab:active { transform: scale(.95); }
+.campo-fab svg { width: 18px; height: 18px; }
+@media (min-width: 720px) { .campo-fab { position: absolute; bottom: 88px; right: 20px; } }
+
+/* ═══════ BOTTOM NAV ═══════ */
+.campo-bnav {
+  position: sticky; bottom: 0; left: 0; right: 0; z-index: 20; margin-top: auto;
+  background: var(--c-bg2); border-top: 1px solid var(--c-border);
+  padding: 7px 4px max(7px, env(safe-area-inset-bottom)) 4px;
+  display: grid; grid-template-columns: repeat(4, 1fr);
+}
+.campo-bnav-item {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 7px 4px; color: var(--c-text3); font-size: 10px; font-weight: 700;
+  letter-spacing: .2px; border-radius: 12px; position: relative; border: 0; cursor: pointer;
+}
+.campo-bnav-item:active { transform: scale(.92); }
+.campo-bnav-item svg { width: 21px; height: 21px; }
+.campo-bnav-item.active { color: var(--c-primary); }
+.campo-bnav-item.active::before {
+  content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  width: 30px; height: 3px; background: var(--c-primary); border-radius: 0 0 3px 3px;
+  box-shadow: 0 0 8px var(--c-primary-border);
+}
+
+/* ═══════ SECTIONS (Início / Pontos / Perfil) ═══════ */
+.campo-section { padding: 18px 20px 24px; display: flex; flex-direction: column; gap: 16px; }
+.campo-h2 { font-weight: 700; font-size: 15px; color: var(--c-text); }
+.campo-card { background: var(--c-card); border: 1px solid var(--c-border); border-radius: 16px; padding: 16px; }
+
+.campo-progress-track { height: 10px; border-radius: 999px; background: var(--c-card2); overflow: hidden; }
+.campo-progress-fill { height: 100%; border-radius: 999px; background: var(--c-gradient); transition: width .4s ease; }
+.campo-pace {
+  display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border-radius: 999px;
+  font-size: 12px; font-weight: 800;
+}
+.campo-pace.tone-success { background: var(--c-success-bg); color: var(--c-success); }
+.campo-pace.tone-danger { background: var(--c-danger-bg); color: var(--c-danger); }
+
+.campo-profile-head { display: flex; align-items: center; gap: 14px; }
+.campo-profile-avatar {
+  width: 58px; height: 58px; border-radius: 50%; background: var(--c-gradient);
+  display: flex; align-items: center; justify-content: center; color: var(--c-on-primary);
+  font-weight: 700; font-size: 19px; box-shadow: var(--c-glow); flex-shrink: 0;
+}
+.campo-switch-item {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  padding: 10px 12px; border-radius: 12px; border: 1px solid var(--c-border); background: var(--c-card2);
+  color: var(--c-text); cursor: pointer;
+}
+.campo-switch-item.active { border-color: var(--c-primary-border); background: var(--c-primary-muted); }
+.campo-switch-avatar {
+  width: 32px; height: 32px; border-radius: 50%; background: var(--c-border2); color: var(--c-text2);
+  display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0;
+}
+
+.campo-toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 13px 4px; border-top: 1px solid var(--c-border); }
+.campo-toggle-row:first-child { border-top: 0; }
+.campo-link-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+  padding: 13px; border-radius: 12px; border: 1px solid var(--c-border); background: var(--c-card2);
+  color: var(--c-text2); font-weight: 700; font-size: 13px; cursor: pointer;
+}
+.campo-link-btn svg { width: 16px; height: 16px; }
+
+/* ═══════ BOTTOM SHEET ═══════ */
+.campo-sheet-backdrop {
+  position: fixed; inset: 0; z-index: 210; background: rgba(20,20,19,0.55);
+  display: flex; align-items: flex-end; justify-content: center;
+}
+@media (min-width: 720px) { .campo-sheet-backdrop { align-items: center; } }
+.campo-sheet {
+  width: 100%; max-width: 430px; background: var(--c-bg2); border: 1px solid var(--c-border);
+  border-radius: 22px 22px 0 0; padding: 18px 20px max(18px, env(safe-area-inset-bottom));
+  animation: campoSheetUp .25s ease both;
+}
+@media (min-width: 720px) { .campo-sheet { border-radius: 22px; } }
+.campo-sheet-grip { width: 40px; height: 4px; border-radius: 999px; background: var(--c-border2); margin: 0 auto 14px; }
+.campo-sheet h3 { font-weight: 700; font-size: 16.5px; color: var(--c-text); }
+.campo-sheet p.sub { font-size: 12px; color: var(--c-text2); margin-top: 2px; }
+.campo-textarea {
+  width: 100%; margin-top: 14px; resize: none; border-radius: 12px; border: 1px solid var(--c-border);
+  background: var(--c-card); color: var(--c-text); padding: 11px 13px; font-family: var(--c-font-sans);
+  font-size: 13.5px; outline: none;
+}
+.campo-textarea:focus { border-color: var(--c-primary-border); }
+
+/* ═══════ ANIMAÇÕES ═══════ */
+@keyframes campoSlideUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes campoFloatIn { from { opacity: 0; transform: translateY(30px) scale(.85); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes campoSheetUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes campoPulse { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
+
+/* ═══════ TELAS PEQUENAS ═══════ */
+@media (max-width: 380px) {
+  .campo-header { padding: 14px 14px 12px; }
+  .campo-avatar { width: 40px; height: 40px; font-size: 14px; }
+  .campo-today { padding: 16px 16px 4px; }
+  .campo-today-title { font-size: 21px; }
+  .campo-stats { padding: 14px 16px 6px; gap: 8px; }
+  .campo-filters { padding: 14px 16px 4px; }
+  .campo-list { padding: 10px 16px 20px; gap: 11px; }
+  .campo-section { padding: 16px 16px 20px; }
+}

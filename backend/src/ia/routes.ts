@@ -6,6 +6,7 @@ import { routeQuestion } from "./router.js";
 import { generateResponse } from "./responder.js";
 import { loadSummary, loadAllSummaries } from "./summaries/hub.js";
 import { summaryCatalog } from "./summaries/catalog.js";
+import { generateExternalRiskAnalysis, type ExternalRiskInput } from "./externalRisk.js";
 
 export const aiRouter = Router();
 
@@ -36,6 +37,28 @@ aiRouter.post("/ai/chat", async (req: Request, res: Response) => {
   } catch (error: unknown) {
     const msg = (error as Error)?.message || "Erro interno da IA";
     console.error("[IA] Falha:", msg);
+    res.status(502).json({ error: msg });
+  }
+});
+
+// POST /api/ai/external-risk — hipóteses de risco externo (câmbio, safra,
+// eleições) para um projeto — prompt dedicado, fora do fluxo de chat porque
+// aqui a IA deve ESPECULAR com conhecimento geral, não só responder com base
+// nos sumários do VETOR.
+aiRouter.post("/ai/external-risk", async (req: Request, res: Response) => {
+  try {
+    const input = req.body as Partial<ExternalRiskInput>;
+    if (!input.projectCode || !input.projectName) {
+      res.status(400).json({ error: "Campos 'projectCode' e 'projectName' são obrigatórios." });
+      return;
+    }
+
+    console.log(`[IA] Análise de risco externo para ${input.projectCode}`);
+    const answer = await generateExternalRiskAnalysis(input as ExternalRiskInput);
+    res.json({ answer });
+  } catch (error: unknown) {
+    const msg = (error as Error)?.message || "Erro interno da IA";
+    console.error("[IA] Falha (risco externo):", msg);
     res.status(502).json({ error: msg });
   }
 });

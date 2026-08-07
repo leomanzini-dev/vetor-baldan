@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { Lightbulb, FlaskConical, Rocket, Filter, Map, CalendarRange, TrendingUp, Wallet, PiggyBank, Gauge } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Lightbulb, FlaskConical, Rocket, Filter, Map, CalendarRange, TrendingUp, Wallet, PiggyBank, Gauge, ArrowRight } from "lucide-react";
 import { useProjects, usePeople } from "@/hooks/usePortfolio";
 import { useTrlStore } from "@/store/trlStore";
 import { Panel } from "@/components/ui/Panel";
@@ -12,7 +13,7 @@ import { InvestmentByVerticalChart } from "@/components/maturidade/InvestmentByV
 import { TopVplChart } from "@/components/maturidade/TopVplChart";
 import { PortfolioRoadmapTable } from "@/components/maturidade/PortfolioRoadmapTable";
 import { ProjectRoadmapModal } from "@/components/maturidade/ProjectRoadmapModal";
-import { TrlScalePanel } from "@/components/maturidade/TrlScalePanel";
+import { TrlScaleLadder } from "@/components/maturidade/TrlScaleLadder";
 import { TrajectoryPanel } from "@/components/maturidade/TrajectoryPanel";
 import { trlBands } from "@/config/trl";
 import { formatCurrencyK } from "@/lib/format";
@@ -120,8 +121,19 @@ export function MaturidadePage() {
           </Panel>
 
           <div className="grid grid-cols-[repeat(auto-fit,minmax(420px,1fr))] gap-5">
-            <Panel title="Escala TRL da Baldan" subtitle="Parametrizável — redefina o que cada nível significa e exige">
-              <TrlScalePanel />
+            <Panel
+              title="Escala TRL da Baldan"
+              subtitle="A escada de maturidade — clique num degrau para explorar"
+              action={
+                <Link
+                  to="/parametrizacao?tab=maturidade"
+                  className="flex shrink-0 items-center gap-1 text-[11.5px] font-semibold text-primary hover:text-primary-hover"
+                >
+                  Editar escala <ArrowRight className="h-3 w-3" />
+                </Link>
+              }
+            >
+              <TrlScaleLadder projects={projects} />
             </Panel>
 
             <Panel title="Projetos em Trajetória" subtitle="Como estão e para onde caminham — próximos marcos de maturidade">
@@ -196,6 +208,7 @@ export function MaturidadePage() {
           level={selectedLevel}
           def={trlLevels.find((l) => l.level === selectedLevel)}
           projects={projects.filter((p) => p.trl === selectedLevel)}
+          people={people ?? []}
           onClose={() => setSelectedLevel(null)}
         />
       )}

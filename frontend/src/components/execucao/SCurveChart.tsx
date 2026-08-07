@@ -62,7 +62,7 @@ export function SCurveChart({ data }: { data: SCurvePoint[] }) {
 
   return (
     <ResponsiveContainer width="100%" height={260}>
-      <LineChart data={data} margin={{ top: 8, right: 12, bottom: 0, left: -18 }}>
+      <LineChart data={data} margin={{ top: 8, right: 40, bottom: 0, left: 4 }}>
         <CartesianGrid vertical={false} stroke={gridColor} />
         <XAxis
           dataKey="month"
@@ -77,7 +77,7 @@ export function SCurveChart({ data }: { data: SCurvePoint[] }) {
           tickLine={false}
           axisLine={false}
           tick={{ fill: axisColor, fontSize: 11 }}
-          width={36}
+          width={38}
           tickFormatter={(v) => `${v}%`}
         />
         <Tooltip content={<ChartTooltip bg={pickThemed(mode, chartChrome.tooltipBg)} border={pickThemed(mode, chartChrome.tooltipBorder)} />} />

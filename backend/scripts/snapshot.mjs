@@ -53,6 +53,9 @@ async function main() {
   const scurvePortfolio = await getJson("/execution/scurve-portfolio");
   await writeJson("execution-scurve.json", scurvePortfolio);
 
+  const monthlyTrend = await getJson("/execution/monthly-trend");
+  await writeJson("execution-monthly-trend.json", monthlyTrend);
+
   for (const project of executionProjects) {
     const detail = await getJson(`/execution/${project.id}`);
     await writeJson(`execution/${project.id}.json`, detail);

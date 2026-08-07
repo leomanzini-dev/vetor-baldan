@@ -109,7 +109,7 @@ export function PortfolioSCurveChart({ data }: { data: PortfolioScurve }) {
         <ResponsiveContainer width="100%" height={320}>
           <ComposedChart
             data={data.points.map((p) => ({ ...p, actualAreaPct: p.actualPct }))}
-            margin={{ top: 8, right: 16, bottom: 0, left: -18 }}
+            margin={{ top: 8, right: 40, bottom: 0, left: 4 }}
           >
             <defs>
               <linearGradient id="scurve-real-fill" x1="0" y1="0" x2="0" y2="1">
@@ -132,7 +132,7 @@ export function PortfolioSCurveChart({ data }: { data: PortfolioScurve }) {
               tickLine={false}
               axisLine={false}
               tick={{ fill: axisColor, fontSize: 11 }}
-              width={36}
+              width={38}
               tickFormatter={(v) => `${v}%`}
             />
             <Tooltip content={<ChartTooltip bg={pickThemed(mode, chartChrome.tooltipBg)} border={pickThemed(mode, chartChrome.tooltipBorder)} />} />

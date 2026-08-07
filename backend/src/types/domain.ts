@@ -92,40 +92,34 @@ export interface PlatformParameters {
 }
 
 // ───────────────────── Eixo 3 — Execução ponta a ponta ─────────────────────
+// A execução é organizada diretamente pelos 9 níveis de maturidade (TRL) do
+// projeto — não por fases genéricas de processo. Cada "Phase" aqui representa
+// um nível TRL (1-9); concluir todas as micro-etapas de um nível é o que
+// avança o projeto para o próximo. Isso conecta o Eixo 3 (Execução) ao
+// Eixo 2 (Maturidade) pela mesma escala.
 
 export type PhaseStatus = "concluida" | "em-andamento" | "pendente";
 
 export interface Phase {
   id: string;
   projectId: string;
+  trlLevel: number; // 1-9
   name: string;
-  order: number;
   status: PhaseStatus;
-}
-
-export type StageStatus = "concluida" | "em-andamento" | "pendente";
-
-export interface Stage {
-  id: string;
-  phaseId: string;
-  projectId: string;
-  name: string;
-  order: number;
-  status: StageStatus;
 }
 
 export type MicroStageStatus = "concluida" | "em-andamento" | "pendente";
 
 export interface MicroStage {
   id: string;
-  stageId: string;
+  phaseId: string; // nível TRL ao qual esta micro-etapa pertence
   projectId: string;
   name: string;
   hours: number;
   points: number; // hours * pointsPerHour
   status: MicroStageStatus;
   assigneeId: string | null;
-  dueDate: string; // ISO — dentro do mês corrente para o quadro de capacidade
+  dueDate: string; // ISO
   completedDate: string | null;
 }
 
@@ -148,8 +142,7 @@ export interface StatusReport {
 
 export interface ProjectExecutionDetail {
   projectId: string;
-  phases: Phase[];
-  stages: Stage[];
+  phases: Phase[]; // 9 níveis TRL
   microStages: MicroStage[];
   scurve: SCurvePoint[];
   statusReport: StatusReport;
@@ -178,4 +171,13 @@ export interface PortfolioScurve {
   progressPct: number; // % médio de prazo decorrido entre os projetos em execução/encerrados — o "hoje" do gráfico
   avgSpi: number;
   projectCount: number;
+}
+
+// Ritmo mensal de execução — quanto foi planejado (micro-etapas com vencimento
+// no mês) x quanto foi de fato concluído, para os últimos meses até o atual.
+export interface MonthlyExecutionTrendPoint {
+  month: string; // "2026-03"
+  pointsPlanned: number;
+  pointsCompleted: number;
+  completionRatePct: number; // 0-100, pointsCompleted / pointsPlanned
 }

@@ -67,7 +67,7 @@ backend/                 API Express em TypeScript (porta 4000)
     responder.ts           etapa 2 do RAG: monta prompt com sumarios e gera resposta final
     routes.ts              Express router: POST /ai/chat, GET /ai/summaries, GET /ai/summaries/:id
     summaries/
-      catalog.ts           catalogo dos 7 sumarios com id, label, descricao e keywords
+      catalog.ts           catalogo dos 6 sumarios com id, label, descricao e keywords
       hub.ts               carrega e combina sumarios selecionados pelo router
       dashboard.ts         sumario: KPIs, saude, verticais, funil, criticos, top prioridade
       priorizacao.ts       sumario: ranking, faixas, top 10, media das 8 lentes
@@ -75,7 +75,6 @@ backend/                 API Express em TypeScript (porta 4000)
       execucao.ts          sumario: projetos em execucao, SPI/CPI, capacidade, sobrecarga
       projetos.ts          sumario: catalogo completo dos 180 projetos com todos os campos
       equipe.ts            sumario: 29 membros agrupados por perfil, carga, vertical
-      seguranca.ts         sumario: descricao do Security Guard (dados mocados)
   src/data/
     verticals.ts           4 verticais: preparo-solo, plantio, pulverizacao, pecas (com cores)
     projectTypes.ts        4 tipos: novo-produto (6 fases), melhoria (4), inovacao (6), parceria-externa (5)
@@ -112,7 +111,7 @@ frontend/                React 19 + Vite 8 + TailwindCSS 4 + TypeScript
     execution/               ~66 JSONs individuais de detalhe de execucao (proj-XX-NNN.json)
 
   src/main.tsx           bootstrap: QueryClientProvider + BrowserRouter + StrictMode
-  src/App.tsx            roteamento, sync de tema, useSentinelaTracker global, overlay do Security Guard, rota /sentinela abre/fecha o painel Sentinela
+  src/App.tsx            roteamento, sync de tema, useSentinelaTracker global, rota /sentinela abre/fecha o painel Sentinela, rota /campo fora do AppShell (app mobile)
   src/index.css          design system completo via CSS custom properties
   src/assets/
     baldan-logo.png      logotipo da Baldan
@@ -169,9 +168,6 @@ frontend/                React 19 + Vite 8 + TailwindCSS 4 + TypeScript
     ModulePlaceholder.tsx  componente generico de "modulo em construcao"
     AiPage.tsx           chat dedicado: logo Baldan, sugestoes, conversa com "Como a IA pensou"
     WhatsAppPage.tsx     painel de conexao do WhatsApp: QR code, status, exemplos de uso
-    Security/
-      SecurityPage.tsx   overlay fullscreen: Brain Guard + SSH Guard, grafo SVG animado, feed ao vivo, modal de detalhe
-      brain.css          tema dark exclusivo, grid SVG, orbitas, nodes, animacoes, responsive
 
   src/components/
     ai/
@@ -305,14 +301,13 @@ INTELIGENCIA ARTIFICIAL
     ARCEE_BASE_URL       base URL (padrao: https://api.arcee.ai/api/v1)
     ARCEE_MODEL          modelo (padrao: Trinity-Large-Thinking)
 
-  7 sumarios disponiveis:
+  6 sumarios disponiveis:
     VISAO_GERAL          KPIs, saude, verticais, funil, criticos, top prioridade
     PRIORIZACAO          ranking, faixas, top 10, media das 8 lentes
     MATURIDADE           distribuicao TRL, roadmap, proximos a escalar
     EXECUCAO             SPI/CPI, capacidade, sobrecarga da equipe
     PROJETOS             catalogo completo dos 180 projetos
     EQUIPE               29 membros por perfil, carga, vertical
-    SEGURANCA            descricao do Security Guard
 
 ==============================
 SISTEMA DE PERFIS / PERSONAS
@@ -369,36 +364,6 @@ DESIGN SYSTEM
   Animacoes: orbit-rotate, icon-float, ring, node-pulse (Sentinela).
   Blueprint SVG mascarado no fundo da tela de login.
   Componentes animados com Framer Motion (layout animation, flash de reordenamento).
-
-==============================
-SECURITY GUARD
-==============================
-
-  Overlay fullscreen dark (position:fixed, z-index sobre tudo) na rota
-  /seguranca. Sem link no menu lateral (o item de menu agora abre o
-  Sentinela, ver SISTEMA DE PERFIS / PERSONAS) — ainda acessivel por URL
-  direta. Fecha com botao ou Esc.
-
-  Dados 100% mocados via PRNG deterministico (mulberry32, seed 20240914).
-  Refresh automatico a cada 8 segundos com seed incremental, simulando
-  novos eventos em tempo real. Sem backend.
-
-  Tres tipos de ator:
-    USER      #22c55e (verde)   — acesso autenticado
-    BOT       #ff2f4f (vermelho) — requisicao sem sessao
-    SSH_TRY   #a855f7 (roxo)    — tentativa de acesso SSH
-
-  Layout:
-    - Topbar: marca VETOR Guard, 4 contadores (USER/BOT/SSH/TOTAL),
-      status online, hora, botoes Atualizar/Limpar/Fechar
-    - Grafo SVG: nos por source com bezier animadas ate o nucleo central,
-      orbitas giratórias, 6 icones de seguranca flutuando, nucleo VETOR
-    - Feed lateral: 10 eventos mais recentes com actor/status/path/raw_log
-    - Modal de detalhe: ao clicar num no, lista ate 30 eventos do source
-
-  Tema escuro exclusivo (brain.css), fundo #0b141a com grid SVG,
-  fonte Oswald para titulos e numeros, Consolas para IPs e logs.
-  Mesma arquitetura visual do Spendio Guard.
 
 ==============================
 WHATSAPP IA (ZAPPER)

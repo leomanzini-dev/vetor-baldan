@@ -1,4 +1,4 @@
-import { Play, Check, Clock, AlertCircle } from "lucide-react";
+import { Play, Check, Clock, AlertCircle, Ban, X } from "lucide-react";
 import { VerticalBadge } from "@/components/ui/Badge";
 import { formatDate, parseLocalDate } from "@/lib/format";
 import type { MicroStage, Project } from "@/types/domain";
@@ -6,7 +6,10 @@ import type { MicroStage, Project } from "@/types/domain";
 interface Props {
   task: MicroStage;
   project?: Project;
+  impediment?: string;
   onAdvance: (id: string) => void;
+  onReportImpediment: (id: string) => void;
+  onClearImpediment: (id: string) => void;
 }
 
 function startOfToday(): number {
@@ -15,13 +18,15 @@ function startOfToday(): number {
   return d.getTime();
 }
 
-export function TaskCard({ task, project, onAdvance }: Props) {
+export function TaskCard({ task, project, impediment, onAdvance, onReportImpediment, onClearImpediment }: Props) {
   const dueTime = parseLocalDate(task.dueDate).setHours(0, 0, 0, 0);
   const isOverdue = task.status !== "concluida" && dueTime < startOfToday();
   const isToday = task.status !== "concluida" && dueTime === startOfToday();
+  const isBlocked = task.status !== "concluida" && !!impediment;
 
-  const borderColor =
-    task.status === "concluida"
+  const borderColor = isBlocked
+    ? "before:bg-danger"
+    : task.status === "concluida"
       ? "before:bg-success"
       : isOverdue
         ? "before:bg-danger"
@@ -31,8 +36,9 @@ export function TaskCard({ task, project, onAdvance }: Props) {
             ? "before:bg-info"
             : "before:bg-border-strong";
 
-  const badge =
-    task.status === "concluida"
+  const badge = isBlocked
+    ? { label: "Impedida", classes: "bg-danger-soft text-danger" }
+    : task.status === "concluida"
       ? { label: "Concluída", classes: "bg-success-soft text-success" }
       : task.status === "em-andamento"
         ? { label: "Em andamento", classes: "bg-info-soft text-info" }
@@ -76,6 +82,20 @@ export function TaskCard({ task, project, onAdvance }: Props) {
         <div className="font-mono text-[11.5px] text-text-tertiary">
           {task.hours}h de trabalho · <span className="font-bold text-primary">{task.points} pts</span>
         </div>
+
+        {isBlocked && (
+          <div className="mt-1 flex items-start gap-2 rounded-md border border-danger-soft bg-danger-soft px-3 py-2">
+            <Ban className="mt-0.5 h-3.5 w-3.5 shrink-0 text-danger" />
+            <p className="min-w-0 flex-1 text-[11.5px] leading-snug text-danger">{impediment}</p>
+            <button
+              onClick={() => onClearImpediment(task.id)}
+              aria-label="Remover impedimento"
+              className="shrink-0 text-danger/70 hover:text-danger"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
       </div>
 
       {task.status !== "concluida" && (
@@ -92,10 +112,20 @@ export function TaskCard({ task, project, onAdvance }: Props) {
           {task.status === "em-andamento" && (
             <button
               onClick={() => onAdvance(task.id)}
-              className="flex flex-1 items-center justify-center gap-2 rounded-btn bg-success py-2.5 text-[13px] font-bold text-white transition-colors hover:opacity-90"
+              className="flex flex-1 items-center justify-center gap-2 rounded-btn bg-success py-2.5 text-[13px] font-bold text-white transition-colors hover:bg-primary-hover"
             >
               <Check className="h-4 w-4" strokeWidth={3} />
               Concluir entrega
+            </button>
+          )}
+          {!isBlocked && (
+            <button
+              onClick={() => onReportImpediment(task.id)}
+              title="Relatar impedimento"
+              aria-label="Relatar impedimento"
+              className="flex shrink-0 items-center justify-center gap-1.5 rounded-btn border border-border px-3 py-2.5 text-[12px] font-bold text-text-secondary transition-colors hover:border-danger/40 hover:text-danger"
+            >
+              <Ban className="h-4 w-4" />
             </button>
           )}
         </div>

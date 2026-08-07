@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   SlidersHorizontal,
   Gauge,
   Layers,
   Boxes,
+  ListChecks,
   ArrowRight,
   RotateCcw,
   Star,
@@ -20,29 +21,32 @@ import {
 import { useFunnelStages, useProjectTypes, useVerticals } from "@/hooks/usePortfolio";
 import { useParamsStore } from "@/store/paramsStore";
 import { useWeightsStore } from "@/store/weightsStore";
-import { useTrlStore } from "@/store/trlStore";
-import { useThemeStore } from "@/store/themeStore";
 import { Panel } from "@/components/ui/Panel";
 import { useAllLenses } from "@/hooks/useLenses";
 import { PresetPreviewBar } from "@/components/parametrizacao/PresetPreviewBar";
 import { PresetEditModal, type EditablePreset } from "@/components/parametrizacao/PresetEditModal";
 import { PresetCreateModal, type SeedOption } from "@/components/parametrizacao/PresetCreateModal";
+import { MicroStageManager } from "@/components/parametrizacao/MicroStageManager";
+import { TrlProcessTemplateEditor } from "@/components/parametrizacao/TrlProcessTemplateEditor";
+import { TrlScaleEditor } from "@/components/parametrizacao/TrlScaleEditor";
 import { weightPresets, type LensId } from "@/config/lenses";
-import { trlColor } from "@/config/chartPalette";
 
 const hoursTiers = [4, 6, 8];
 
-type Tab = "lentes" | "capacidade" | "maturidade" | "estrutura";
+type Tab = "lentes" | "capacidade" | "maturidade" | "microetapas" | "estrutura";
 
 const tabs: { id: Tab; label: string; icon: typeof SlidersHorizontal }[] = [
   { id: "lentes", label: "Lentes & Pesos", icon: SlidersHorizontal },
   { id: "capacidade", label: "Capacidade", icon: Gauge },
   { id: "maturidade", label: "Maturidade", icon: Layers },
+  { id: "microetapas", label: "Micro-etapas", icon: ListChecks },
   { id: "estrutura", label: "Estrutura", icon: Boxes },
 ];
 
 export function ParametrizacaoPage() {
-  const [tab, setTab] = useState<Tab>("lentes");
+  const [searchParams] = useSearchParams();
+  const initialTab = tabs.find((t) => t.id === searchParams.get("tab"))?.id ?? "lentes";
+  const [tab, setTab] = useState<Tab>(initialTab);
   const navigate = useNavigate();
 
   const pointsPerHour = useParamsStore((s) => s.pointsPerHour);
@@ -61,8 +65,6 @@ export function ParametrizacaoPage() {
   const updatePresetWeights = useWeightsStore((s) => s.updatePresetWeights);
   const updateCustomPresetMeta = useWeightsStore((s) => s.updateCustomPresetMeta);
   const createPreset = useWeightsStore((s) => s.createPreset);
-  const trlLevels = useTrlStore((s) => s.levels);
-  const themeMode = useThemeStore((s) => s.mode);
   const allLenses = useAllLenses();
 
   const { data: verticals } = useVerticals();
@@ -354,31 +356,33 @@ export function ParametrizacaoPage() {
       {tab === "maturidade" && (
         <Panel
           title="Maturidade — Escala TRL"
-          subtitle="9 níveis, editáveis em contexto"
+          subtitle="9 níveis, totalmente editáveis — o mesmo texto usado no funil, no roadmap e nos sinais de IA"
           action={
             <Link to="/maturidade" className="flex items-center gap-1 text-[11.5px] font-semibold text-primary hover:text-primary-hover">
-              Editar <ArrowRight className="h-3 w-3" />
+              Ver no Funil <ArrowRight className="h-3 w-3" />
             </Link>
           }
         >
-          <div className="flex flex-wrap gap-2">
-            {trlLevels.map((level) => (
-              <span
-                key={level.level}
-                title={level.title}
-                className="flex items-center gap-2 rounded-full border border-border bg-app-alt px-3 py-1.5"
-              >
-                <span
-                  className="flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-white"
-                  style={{ backgroundColor: trlColor(level.level, themeMode) }}
-                >
-                  {level.level}
-                </span>
-                <span className="text-[11.5px] font-medium text-text-secondary">{level.title}</span>
-              </span>
-            ))}
-          </div>
+          <TrlScaleEditor />
         </Panel>
+      )}
+
+      {tab === "microetapas" && (
+        <div className="flex flex-col gap-5">
+          <Panel
+            title="Sequência de Processos por TRL"
+            subtitle="Checklist padrão de passos por nível de maturidade e vertical (4 P's) — reaproveitado ao criar micro-etapas"
+          >
+            <TrlProcessTemplateEditor />
+          </Panel>
+
+          <Panel
+            title="Vincular Micro-etapas ao Projeto"
+            subtitle="Escolha os passos da sequência padrão, o projeto e o responsável — prazo e pontos vêm da sequência definida acima. Dá para transferir o responsável depois."
+          >
+            <MicroStageManager />
+          </Panel>
+        </div>
       )}
 
       {tab === "estrutura" && (

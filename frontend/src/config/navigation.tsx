@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   Sparkles,
   MessageCircle,
+  ListChecks,
 } from "lucide-react";
 
 export interface NavItem {
@@ -39,6 +40,10 @@ export const navGroups: NavGroup[] = [
       { label: "Maturidade", path: "/maturidade", icon: Layers3, eixo: 2, moduleStatus: "upcoming" },
       { label: "Execução", path: "/execucao", icon: Workflow, eixo: 3, moduleStatus: "upcoming" },
     ],
+  },
+  {
+    title: "Micro Etapas",
+    items: [{ label: "Minhas Tarefas", path: "/colaborador", icon: ListChecks, moduleStatus: "upcoming" }],
   },
   {
     title: "Portfólio",

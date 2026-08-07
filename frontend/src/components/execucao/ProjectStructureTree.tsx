@@ -1,10 +1,12 @@
 import { useMemo, useState } from "react";
 import { ChevronRight, CheckCircle2, CircleDot, Circle } from "lucide-react";
-import type { MicroStage, Phase, PhaseStatus, Stage } from "@/types/domain";
-import type { Person } from "@/types/domain";
+import { useTrlStore } from "@/store/trlStore";
+import { trlColor, trlTextColor } from "@/config/chartPalette";
+import { useThemeStore } from "@/store/themeStore";
+import type { MicroStage, Phase, PhaseStatus, Person } from "@/types/domain";
 
 const statusMeta: Record<PhaseStatus, { label: string; classes: string; icon: typeof CheckCircle2 }> = {
-  concluida: { label: "Concluída", classes: "bg-success-soft text-success", icon: CheckCircle2 },
+  concluida: { label: "Concluído", classes: "bg-success-soft text-success", icon: CheckCircle2 },
   "em-andamento": { label: "Em andamento", classes: "bg-info-soft text-info", icon: CircleDot },
   pendente: { label: "Pendente", classes: "bg-app-alt text-text-tertiary", icon: Circle },
 };
@@ -43,36 +45,16 @@ function MicroStageRow({ micro, person }: { micro: MicroStage; person?: Person }
   );
 }
 
-function StageRow({ stage, microStages, people }: { stage: Stage; microStages: MicroStage[]; people: Person[] }) {
-  const [open, setOpen] = useState(false);
-  const items = microStages.filter((m) => m.stageId === stage.id);
-
-  return (
-    <div className="ml-4 border-l border-border pl-3">
-      <button onClick={() => setOpen((v) => !v)} className="flex w-full items-center gap-2.5 rounded-md py-1.5 text-left">
-        <ChevronRight className={`h-3.5 w-3.5 shrink-0 text-text-tertiary transition-transform ${open ? "rotate-90" : ""}`} />
-        <span className="min-w-0 flex-1 truncate text-[12.5px] font-medium text-text">{stage.name}</span>
-        <StatusPill status={stage.status} />
-      </button>
-      {open && (
-        <div className="mb-1 ml-2 flex flex-col">
-          {items.map((m) => (
-            <MicroStageRow key={m.id} micro={m} person={people.find((p) => p.id === m.assigneeId)} />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 interface Props {
   phases: Phase[];
-  stages: Stage[];
   microStages: MicroStage[];
   people: Person[];
 }
 
-export function ProjectStructureTree({ phases, stages, microStages, people }: Props) {
+export function ProjectStructureTree({ phases, microStages, people }: Props) {
+  const mode = useThemeStore((s) => s.mode);
+  const trlLevels = useTrlStore((s) => s.levels);
+
   const initialOpen = useMemo(
     () => new Set(phases.filter((p) => p.status === "em-andamento").map((p) => p.id)),
     [phases]
@@ -88,26 +70,41 @@ export function ProjectStructureTree({ phases, stages, microStages, people }: Pr
     });
   }
 
+  const sortedPhases = [...phases].sort((a, b) => a.trlLevel - b.trlLevel);
+
   return (
     <div className="flex flex-col gap-1.5">
-      {phases.map((phase) => {
+      {sortedPhases.map((phase) => {
         const open = openPhases.has(phase.id);
-        const phaseStages = stages.filter((s) => s.phaseId === phase.id);
+        const items = microStages.filter((m) => m.phaseId === phase.id);
+        const levelDef = trlLevels.find((l) => l.level === phase.trlLevel);
         return (
           <div key={phase.id} className="rounded-md border border-border">
             <button onClick={() => togglePhase(phase.id)} className="flex w-full items-center gap-3 px-3.5 py-3 text-left">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-nav font-mono text-[11px] font-bold text-nav-text">
-                {phase.order}
+              <span
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold"
+                style={{ backgroundColor: trlColor(phase.trlLevel, mode), color: trlTextColor(phase.trlLevel, mode) }}
+              >
+                {phase.trlLevel}
               </span>
-              <span className="min-w-0 flex-1 truncate text-[13.5px] font-semibold text-text">{phase.name}</span>
+              <span className="min-w-0 flex-1 truncate text-[13.5px] font-semibold text-text">
+                TRL {phase.trlLevel}
+                {levelDef && <span className="font-normal text-text-tertiary"> — {levelDef.title}</span>}
+              </span>
+              <span className="shrink-0 text-[11px] font-mono text-text-tertiary">{items.length} micro-etapas</span>
               <StatusPill status={phase.status} />
               <ChevronRight className={`h-4 w-4 shrink-0 text-text-tertiary transition-transform ${open ? "rotate-90" : ""}`} />
             </button>
             {open && (
               <div className="flex flex-col gap-1 border-t border-border px-3.5 py-2.5">
-                {phaseStages.map((stage) => (
-                  <StageRow key={stage.id} stage={stage} microStages={microStages} people={people} />
+                {items.map((m) => (
+                  <MicroStageRow key={m.id} micro={m} person={people.find((p) => p.id === m.assigneeId)} />
                 ))}
+                {items.length === 0 && (
+                  <p className="py-3 text-center text-[12px] text-text-tertiary">
+                    Nenhuma micro-etapa criada para este nível ainda — crie em Parametrização.
+                  </p>
+                )}
               </div>
             )}
           </div>

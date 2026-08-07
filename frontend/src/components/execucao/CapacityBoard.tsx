@@ -1,46 +1,29 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Check, TriangleAlert } from "lucide-react";
 import { formatDate } from "@/lib/format";
-import type { CapacitySummary, MicroStageStatus, Project } from "@/types/domain";
+import type { CapacitySummary, Project } from "@/types/domain";
 
 interface Props {
   summary: CapacitySummary[];
   projectsById: Map<string, Project>;
 }
 
-function effectiveStatus(
-  overrides: Record<string, MicroStageStatus>,
-  id: string,
-  original: MicroStageStatus
-): MicroStageStatus {
-  return overrides[id] ?? original;
-}
+const PAGE_SIZE = 5;
 
 export function CapacityBoard({ summary, projectsById }: Props) {
   const [selectedId, setSelectedId] = useState<string | null>(summary[0]?.person.id ?? null);
-  const [overrides, setOverrides] = useState<Record<string, MicroStageStatus>>({});
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
-  const computed = useMemo(
-    () =>
-      summary.map((s) => {
-        const microStages = s.microStages.map((m) => ({ ...m, status: effectiveStatus(overrides, m.id, m.status) }));
-        const pointsEarned = microStages.filter((m) => m.status === "concluida").reduce((sum, m) => sum + m.points, 0);
-        const pointsCommitted = microStages.reduce((sum, m) => sum + m.points, 0);
-        return { ...s, microStages, pointsEarned, pointsCommitted };
-      }),
-    [summary, overrides]
-  );
-
+  const computed = summary;
   const selected = computed.find((s) => s.person.id === selectedId) ?? computed[0];
-
-  function toggle(id: string, current: MicroStageStatus) {
-    setOverrides((prev) => ({ ...prev, [id]: current === "concluida" ? "pendente" : "concluida" }));
-  }
+  const visible = computed.slice(0, visibleCount);
+  const remaining = computed.length - visible.length;
 
   return (
     <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_1.2fr]">
+      <div className="flex flex-col gap-3">
       <div className="flex flex-col divide-y divide-border">
-        {computed.map((s) => {
+        {visible.map((s) => {
           const capPct = s.monthlyCapacityPoints > 0 ? (s.pointsEarned / s.monthlyCapacityPoints) * 100 : 0;
           const committedPct = s.monthlyCapacityPoints > 0 ? (s.pointsCommitted / s.monthlyCapacityPoints) * 100 : 0;
           const overloaded = s.pointsCommitted > s.monthlyCapacityPoints;
@@ -85,6 +68,15 @@ export function CapacityBoard({ summary, projectsById }: Props) {
           );
         })}
       </div>
+      {remaining > 0 && (
+        <button
+          onClick={() => setVisibleCount((v) => v + PAGE_SIZE)}
+          className="self-center rounded-md border border-border bg-surface px-4 py-2 text-[12px] font-bold text-text-secondary transition-colors hover:border-primary/40 hover:text-primary"
+        >
+          Carregar mais ({remaining})
+        </button>
+      )}
+      </div>
 
       {selected && (
         <div className="rounded-md border border-border bg-app-alt/40 p-4">
@@ -111,20 +103,19 @@ export function CapacityBoard({ summary, projectsById }: Props) {
           )}
 
           <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-text-tertiary">
-            Micro-etapas do mês · clique para marcar entrega
+            Micro-etapas do mês · a conclusão é feita pelo responsável em Minhas Tarefas
           </p>
           <div className="flex flex-col gap-1.5">
             {selected.microStages.map((m) => {
               const project = projectsById.get(m.projectId);
               const done = m.status === "concluida";
               return (
-                <button
+                <div
                   key={m.id}
-                  onClick={() => toggle(m.id, m.status)}
-                  className="flex items-center gap-3 rounded-md border border-border bg-surface px-3 py-2 text-left transition-colors hover:border-primary/40"
+                  className="flex items-center gap-3 rounded-md border border-border bg-surface px-3 py-2"
                 >
                   <span
-                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition-colors ${
+                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 ${
                       done ? "border-success bg-success text-white" : "border-border-strong text-transparent"
                     }`}
                   >
@@ -141,7 +132,7 @@ export function CapacityBoard({ summary, projectsById }: Props) {
                   <span className="shrink-0 font-mono text-[11px] font-semibold text-text-secondary">
                     {m.hours}h · {m.points}pt
                   </span>
-                </button>
+                </div>
               );
             })}
             {selected.microStages.length === 0 && (

@@ -1,6 +1,7 @@
 import type {
   CapacityResponse,
   FunnelStage,
+  MonthlyExecutionTrendPoint,
   Person,
   PlatformParameters,
   PortfolioHighlights,
@@ -82,4 +83,5 @@ export const api = {
   getExecutionDetail: (projectId: string) => getJson<ProjectExecutionDetail>(`/execution/${projectId}.json`),
   getCapacitySummary: () => getJson<CapacityResponse>("/execution-capacity.json"),
   getPortfolioScurve: () => getJson<PortfolioScurve>("/execution-scurve.json"),
+  getMonthlyTrend: () => getJson<MonthlyExecutionTrendPoint[]>("/execution-monthly-trend.json"),
 };

@@ -1,6 +1,6 @@
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useThemeStore } from "@/store/themeStore";
-import { chartChrome, lensCategoricalRamp, pickThemed } from "@/config/chartPalette";
+import { chartChrome, pickThemed, priorityBandColors } from "@/config/chartPalette";
 import type { LensAverage } from "@/lib/lensStats";
 
 interface TooltipPayloadEntry {
@@ -29,27 +29,30 @@ function ChartTooltip({
 }
 
 // Perfil estratégico do portfólio: uma série única (a média do portfólio),
-// então cor única de identidade (slot 1) em vez de uma cor por lente — as
-// lentes aqui são categorias nominais sem ordem própria, então recolorir
-// cada barra reencodaria o que o comprimento já mostra.
+// então cor única de identidade em vez de uma cor por lente — as lentes
+// aqui são categorias nominais sem ordem própria, então recolorir cada
+// barra reencodaria o que o comprimento já mostra. A cor usada é o
+// vermelho --primary da marca Baldan (mesmo tom das faixas "Prioritário"
+// em Priorização), não uma cor categórica genérica — este é um gráfico de
+// identidade única, deve ler como "a marca", não como "mais uma série".
 export function LensProfileChart({ data }: { data: LensAverage[] }) {
   const mode = useThemeStore((s) => s.mode);
-  const color = pickThemed(mode, lensCategoricalRamp[0]);
+  const color = pickThemed(mode, priorityBandColors.prioritario);
   const axisColor = pickThemed(mode, chartChrome.axisText);
 
   const chartData = data.map((d) => ({ ...d, label: d.label }));
 
   return (
-    <ResponsiveContainer width="100%" height={260}>
-      <BarChart data={chartData} layout="vertical" margin={{ top: 0, right: 32, bottom: 0, left: 0 }} barSize={16}>
+    <ResponsiveContainer width="100%" height={296}>
+      <BarChart data={chartData} layout="vertical" margin={{ top: 0, right: 30, bottom: 0, left: 0 }} barSize={18} barCategoryGap="22%">
         <XAxis type="number" domain={[0, 100]} hide />
         <YAxis
           type="category"
           dataKey="short"
-          width={92}
+          width={100}
           tickLine={false}
           axisLine={false}
-          tick={{ fill: axisColor, fontSize: 12, fontFamily: "Inter, sans-serif" }}
+          tick={{ fill: axisColor, fontSize: 11.5, fontFamily: "Inter, sans-serif" }}
         />
         <Tooltip
           cursor={{ fill: "transparent" }}

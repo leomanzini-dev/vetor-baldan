@@ -21,7 +21,7 @@ interface Analysis {
 
 const emptyForm = { name: "", description: "", tir: 15, vpl: 1500, budget: 800 };
 
-export function SubmissionForm() {
+export function SubmissionForm({ onClose }: { onClose?: () => void }) {
   const [form, setForm] = useState(emptyForm);
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [registered, setRegistered] = useState(false);
@@ -105,13 +105,23 @@ export function SubmissionForm() {
             anexada para a equipe responsável.
           </p>
         </div>
-        <button
-          onClick={reset}
-          className="flex items-center gap-2 rounded-btn bg-primary px-4 py-2 text-[13px] font-semibold text-on-primary hover:bg-primary-hover"
-        >
-          <RotateCcw className="h-3.5 w-3.5" />
-          Registrar outra ideia
-        </button>
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={reset}
+            className="flex items-center gap-2 rounded-btn border border-border px-4 py-2 text-[13px] font-semibold text-text-secondary hover:bg-app-alt"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            Registrar outra ideia
+          </button>
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="rounded-btn bg-primary px-4 py-2 text-[13px] font-semibold text-on-primary hover:bg-primary-hover"
+            >
+              Fechar
+            </button>
+          )}
+        </div>
       </div>
     );
   }
@@ -192,7 +202,7 @@ export function SubmissionForm() {
                   className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-[12.5px] text-text outline-none focus:border-primary"
                 >
                   {verticals?.map((v) => (
-                    <option key={v.id} value={v.id}>
+                    <option key={v.id} value={v.id} className="bg-surface text-text">
                       {v.name}
                     </option>
                   ))}
@@ -205,7 +215,7 @@ export function SubmissionForm() {
                   className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-[12.5px] text-text outline-none focus:border-primary"
                 >
                   {types?.map((t) => (
-                    <option key={t.id} value={t.id}>
+                    <option key={t.id} value={t.id} className="bg-surface text-text">
                       {t.name}
                     </option>
                   ))}

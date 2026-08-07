@@ -26,7 +26,7 @@ export function bandForTrl(trl: number): TrlBandId {
 }
 
 // Escala TRL adaptada ao contexto de metalomecânica agrícola da Baldan — valor
-// "de fábrica". Totalmente editável em runtime (ver TrlScalePanel / trlStore).
+// "de fábrica". Totalmente editável em runtime (ver TrlScaleEditor / trlStore).
 export const defaultTrlLevels: TrlLevelDef[] = [
   {
     level: 1,
