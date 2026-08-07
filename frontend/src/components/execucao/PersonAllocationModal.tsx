@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { X, Bot, Loader2, RotateCcw, Sparkles, Brain } from "lucide-react";
+import { aiFetch } from "@/lib/aiFetch";
 import type { PersonPaceStatus } from "@/lib/executionPace";
 import type { Project } from "@/types/domain";
 
@@ -52,16 +53,7 @@ export function PersonAllocationModal({ person, project, onClose }: Props) {
     setStatus("loading");
     setResult(null);
     try {
-      const res = await fetch("/api/ai/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: buildQuestion(person, project), history: [] }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: "Erro desconhecido" }));
-        throw new Error(err.error || `HTTP ${res.status}`);
-      }
-      const data = await res.json();
+      const data = await aiFetch("/api/ai/chat", { question: buildQuestion(person, project), history: [] });
       setResult({ answer: data.answer, summaries: data.summaries, intent: data.intent });
       setStatus("done");
     } catch {

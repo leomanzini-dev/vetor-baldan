@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { AlertTriangle, Bot, Brain, FileText, Gauge, Loader2, RotateCcw, Sparkles, TrendingUp } from "lucide-react";
+import { aiFetch } from "@/lib/aiFetch";
 
 interface QuickPrompt {
   label: string;
@@ -51,21 +52,10 @@ export function AiBriefingCard() {
   async function generate(prompt: QuickPrompt) {
     setStatus("loading");
     try {
-      const res = await fetch("/api/ai/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          question: `[Contexto: painel executivo do portfólio] ${prompt.question}`,
-          history: [],
-        }),
+      const data = await aiFetch("/api/ai/chat", {
+        question: `[Contexto: painel executivo do portfólio] ${prompt.question}`,
+        history: [],
       });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: "Erro desconhecido" }));
-        throw new Error(err.error || `HTTP ${res.status}`);
-      }
-
-      const data = await res.json();
       setResult({ question: prompt.label, answer: data.answer, summaries: data.summaries, intent: data.intent });
       setAnsweredAt(new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }));
       setStatus("done");

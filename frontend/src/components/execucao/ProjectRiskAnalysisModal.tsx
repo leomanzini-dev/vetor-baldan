@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { X, Bot, Loader2, RotateCcw, Globe } from "lucide-react";
 import { verticalNames } from "@/config/verticals";
+import { aiFetch } from "@/lib/aiFetch";
 import type { Project } from "@/types/domain";
 
 interface Props {
@@ -22,26 +23,17 @@ export function ProjectRiskAnalysisModal({ project, onClose }: Props) {
     setStatus("loading");
     setAnswer(null);
     try {
-      const res = await fetch("/api/ai/external-risk", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          projectCode: project.code,
-          projectName: project.name,
-          vertical: verticalNames[project.vertical],
-          type: humanizeType(project.type),
-          trl: project.trl,
-          spi: project.spi,
-          cpi: project.cpi,
-          health: project.health,
-          description: project.description,
-        }),
+      const data = await aiFetch("/api/ai/external-risk", {
+        projectCode: project.code,
+        projectName: project.name,
+        vertical: verticalNames[project.vertical],
+        type: humanizeType(project.type),
+        trl: project.trl,
+        spi: project.spi,
+        cpi: project.cpi,
+        health: project.health,
+        description: project.description,
       });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: "Erro desconhecido" }));
-        throw new Error(err.error || `HTTP ${res.status}`);
-      }
-      const data = await res.json();
       setAnswer(data.answer);
       setStatus("done");
     } catch {

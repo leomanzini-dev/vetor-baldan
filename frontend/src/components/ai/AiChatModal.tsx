@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { X, Send, Loader2, Bot, User, Trash2, Sparkles, Brain } from "lucide-react";
+import { aiFetch } from "@/lib/aiFetch";
 
 interface Message {
   id: number;
@@ -52,21 +53,10 @@ export function AiChatModal({ pageName, summaryId, onClose }: Props) {
 
     try {
       const history = messages.map((m) => ({ role: m.role, content: m.content }));
-      const res = await fetch("/api/ai/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          question: `[Contexto: o usuário está na aba "${pageName}". Sumário preferencial: ${summaryId}] ${question}`,
-          history,
-        }),
+      const data = await aiFetch("/api/ai/chat", {
+        question: `[Contexto: o usuário está na aba "${pageName}". Sumário preferencial: ${summaryId}] ${question}`,
+        history,
       });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: "Erro desconhecido" }));
-        throw new Error(err.error || `HTTP ${res.status}`);
-      }
-
-      const data = await res.json();
       setMessages((prev) => [...prev, {
         id: ++idRef.current,
         role: "assistant",

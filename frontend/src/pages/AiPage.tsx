@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Send, Loader2, Bot, User, Trash2, Brain } from "lucide-react";
 import baldanLogo from "@/assets/baldan-logo.png";
+import { aiFetch } from "@/lib/aiFetch";
 
 interface Message {
   id: number;
@@ -47,18 +48,7 @@ export function AiPage() {
 
     try {
       const history = messages.map((m) => ({ role: m.role, content: m.content }));
-      const res = await fetch("/api/ai/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question, history }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: "Erro desconhecido" }));
-        throw new Error(err.error || `HTTP ${res.status}`);
-      }
-
-      const data = await res.json();
+      const data = await aiFetch("/api/ai/chat", { question, history });
       const aiMsg: Message = {
         id: ++idRef.current,
         role: "assistant",
